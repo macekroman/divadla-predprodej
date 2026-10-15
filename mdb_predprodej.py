@@ -97,7 +97,7 @@ MONTHS = ["leden", "únor", "březen", "duben", "květen", "červen",
 
 GENRES = {"Drama": "Činohra", "Musical": "Muzikál", "Concert": "Koncert", "Opera": "Opera",
           "Ballet": "Balet", "Dance": "Tanec", "Show": "Show"}
-DARK = "--bg:#111418; --card:#1a1e24; --fg:#e8eaed; --muted:#9aa3ad; --line:#2b313a; --accent:#ff5c8a; --ok:#4ade80; --low:#facc15; --zero:#f87171;"
+DARK = "--bg:#111418; --card:#1a1e24; --fg:#e8eaed; --muted:#9aa3ad; --line:#2b313a; --accent:#ff5c8a; --ok:#86efac; --ok-bg:#14532d; --low:#fde047; --low-bg:#713f12; --zero:#fca5a5; --zero-bg:#7f1d1d;"
 
 
 def genre_label(e):
@@ -157,7 +157,7 @@ def render(events, urls, prices, months):
 <title>MDB předprodej</title>
 <style>
 :root {{ --bg:#f6f7f9; --card:#fff; --fg:#1b1f24; --muted:#6b7280; --line:#e5e7eb; --accent:#b4003c;
-        --ok:#15803d; --low:#a16207; --zero:#b91c1c; }}
+        --ok:#166534; --ok-bg:#dcfce7; --low:#854d0e; --low-bg:#fef08a; --zero:#991b1b; --zero-bg:#fecaca; }}
 @media (prefers-color-scheme: dark) {{ :root:not([data-theme=light]) {{ {DARK} }} }}
 :root[data-theme=dark] {{ {DARK} }}
 * {{ box-sizing:border-box }}
@@ -181,7 +181,9 @@ td.num, td.date {{ white-space:nowrap }}
 a {{ color:inherit; text-decoration-color:var(--line) }} a:hover {{ color:var(--accent) }}
 button {{ background:var(--accent); color:#fff; border:0; border-radius:8px; padding:7px 14px; font-weight:600; cursor:pointer }}
 .note {{ font-size:13px; color:var(--muted); margin-top:16px }}
-.free {{ font-weight:700; font-size:17px }} .free.ok {{ color:var(--ok) }} .free.low {{ color:var(--low) }} .free.zero {{ color:var(--zero) }}
+.free {{ display:inline-block; min-width:2.6em; text-align:center; font-weight:700; padding:2px 8px; border-radius:6px }}
+.free.ok {{ color:var(--ok); background:var(--ok-bg) }} .free.low {{ color:var(--low); background:var(--low-bg) }}
+.free.zero {{ color:var(--zero); background:var(--zero-bg) }}
 .filters {{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; }}
 @media (max-width:560px) {{ th:nth-child(5), td:nth-child(5) {{ display:none }} th, td {{ padding:10px 8px }} }}
 </style></head><body><main>
@@ -201,7 +203,7 @@ button {{ background:var(--accent); color:#fff; border:0; border-radius:8px; pad
 {chr(10).join(trs)}
 </tbody></table>
 <div class="empty" id="empty" hidden>Žádná představení.</div>
-<p class="note">„Sál“ otevře novou záložku, v ní nejdřív otevře představení na server.mdb.cz a po 2,5 s přejde na aktuální mapu sálu.
+<p class="note">„Sál“ otevře novou záložku, v ní nejdřív otevře představení na server.mdb.cz a hned potom přejde na aktuální mapu sálu.
 Pokud zůstane na hlášce „Na tuto akci není možné provádět rezervace“, klikni na „Sál“ znovu.
 Před začátkem předprodeje jsou místa vidět, ale nejdou vybrat.
 „Volno“ je počet volných míst, jak ho uvádí web mdb.cz, aktualizovaný zhruba každou hodinu; přesný stav ukáže mapa sálu.</p>
@@ -216,7 +218,18 @@ function openHall(id, url) {{
     const i = document.createElement('input'); i.type = 'hidden'; i.name = k; i.value = v; f.appendChild(i);
   }}
   document.body.appendChild(f); f.submit(); f.remove();
-  setTimeout(() => {{ if (w) w.location.href = url; }}, 2500);
+  if (!w) return;
+  // Dokud je záložka about:blank, vidíme do ní. Jakmile se v ní načte server.mdb.cz (po všech
+  // přesměrováních, takže cookie session už je nastavená), přístup vyhodí výjimku – pak přepneme na sál.
+  const started = Date.now();
+  const timer = setInterval(() => {{
+    let ready;
+    try {{ ready = w.location.href !== 'about:blank'; }} catch (e) {{ ready = true; }}
+    if (ready || Date.now() - started > 5000) {{
+      clearInterval(timer);
+      if (!w.closed) w.location.href = url;
+    }}
+  }}, 50);
 }}
 const fold = t => t.normalize('NFD').replace(/\\p{{Diacritic}}/gu, '').toLowerCase();  // bez diakritiky
 const tabs = [...document.querySelectorAll('#tabs button')];
