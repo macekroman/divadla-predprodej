@@ -76,6 +76,13 @@ def safe_hall_url(cid, attempts=4):
 
 
 WEEKDAYS = ["po", "út", "st", "čt", "pá", "so", "ne"]
+MONTHS = ["leden", "únor", "březen", "duben", "květen", "červen",
+          "červenec", "srpen", "září", "říjen", "listopad", "prosinec"]
+
+
+def month_label(ym):
+    y, m = map(int, ym.split("-"))
+    return f"{MONTHS[m - 1].capitalize()} {y}"
 
 
 def render(events, urls, months):
@@ -96,7 +103,7 @@ def render(events, urls, months):
             btn = '<span class="muted">sál nenačten</span>'
         else:
             btn = f'<button onclick="openHall({cid}, {html.escape(json.dumps(url))})">Sál</button>'
-        trs.append(f"""<tr data-title="{title.lower()}">
+        trs.append(f"""<tr data-title="{title.lower()}" data-month="{dt:%Y-%m}" data-start="{e['start']}">
   <td class="date"><b>{dt.day}. {dt.month}.</b> {WEEKDAYS[dt.weekday()]}<br><span class="muted">{dt:%H:%M}</span></td>
   <td><a href="{prod_url}" target="_blank" rel="noopener">{title}</a><br><span class="muted">{stage} · ID {cid or '–'}</span></td>
   <td class="num">{sale_txt}</td>
@@ -115,7 +122,11 @@ body {{ margin:0; background:var(--bg); color:var(--fg); font:15px/1.4 system-ui
 main {{ max-width:900px; margin:0 auto; padding:24px 16px; }}
 h1 {{ margin:0 0 4px; font-size:22px }}
 .muted {{ color:var(--muted); font-size:13px }}
-.bar {{ margin:16px 0; }}
+.bar {{ margin:16px 0; display:flex; flex-direction:column; gap:10px; }}
+.tabs {{ display:flex; flex-wrap:wrap; gap:6px; }}
+.tabs button {{ background:var(--card); color:var(--fg); border:1px solid var(--line); font-weight:500; }}
+.tabs button.active {{ background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }}
+.empty {{ padding:24px 12px; text-align:center; color:var(--muted); }}
 input[type=search] {{ padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--fg); width:100%; max-width:320px }}
 table {{ width:100%; border-collapse:collapse; background:var(--card); border-radius:10px; overflow:hidden; }}
 th, td {{ padding:10px 12px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top }}
@@ -127,12 +138,16 @@ button {{ background:var(--accent); color:#fff; border:0; border-radius:8px; pad
 @media (max-width:560px) {{ th:nth-child(3), td:nth-child(3) {{ display:none }} }}
 </style></head><body><main>
 <h1>MDB – sály představení</h1>
-<div class="muted">{', '.join(months)} · seznam k {generated} · neoficiální rozcestník, nákup probíhá přímo na <a href="{WEB}" target="_blank" rel="noopener">mdb.cz</a></div>
-<div class="bar"><input type="search" id="q" placeholder="Hledat představení…" oninput="filter()"></div>
+<div class="muted">Seznam k {generated} · neoficiální rozcestník, nákup probíhá přímo na <a href="{WEB}" target="_blank" rel="noopener">mdb.cz</a></div>
+<div class="bar">
+  <div class="tabs" id="tabs">{"".join(f'<button data-month="{m}">{month_label(m)}</button>' for m in months)}<button data-month="all">Vše</button></div>
+  <input type="search" id="q" placeholder="Hledat představení…" oninput="filter()">
+</div>
 <table><thead><tr><th>Datum</th><th>Představení</th><th>Předprodej od</th><th></th></tr></thead>
 <tbody>
 {chr(10).join(trs)}
 </tbody></table>
+<div class="empty" id="empty" hidden>Žádná představení.</div>
 <p class="note">„Sál“ otevře novou záložku, v ní nejdřív otevře představení na server.mdb.cz a po 2,5 s přejde na aktuální mapu sálu.
 Pokud zůstane na hlášce „Na tuto akci není možné provádět rezervace“, klikni na „Sál“ znovu.
 Před začátkem předprodeje jsou místa vidět, ale nejdou vybrat.</p>
@@ -149,10 +164,31 @@ function openHall(id, url) {{
   document.body.appendChild(f); f.submit(); f.remove();
   setTimeout(() => {{ if (w) w.location.href = url; }}, 2500);
 }}
+const tabs = [...document.querySelectorAll('#tabs button')];
+let month = '';
+function setMonth(m) {{
+  if (!tabs.some(b => b.dataset.month === m)) m = tabs[tabs.length - 2].dataset.month;  // výchozí: nejnovější měsíc
+  month = m;
+  for (const b of tabs) b.classList.toggle('active', b.dataset.month === m);
+  history.replaceState(null, '', '#' + m);
+  filter();
+}}
 function filter() {{
   const q = document.getElementById('q').value.trim().toLowerCase();
-  for (const tr of document.querySelectorAll('tbody tr')) tr.style.display = tr.dataset.title.includes(q) ? '' : 'none';
+  const now = new Date();
+  let shown = 0;
+  for (const tr of document.querySelectorAll('tbody tr')) {{
+    const show = tr.dataset.title.includes(q)
+      && (month === 'all' || tr.dataset.month === month)
+      && new Date(tr.dataset.start) > now;  // proběhlá představení skrýt
+    tr.style.display = show ? '' : 'none';
+    shown += show;
+  }}
+  document.getElementById('empty').hidden = shown > 0;
 }}
+for (const b of tabs) b.onclick = () => setMonth(b.dataset.month);
+window.onhashchange = () => setMonth(location.hash.slice(1));
+setMonth(location.hash.slice(1));
 </script></body></html>"""
 
 

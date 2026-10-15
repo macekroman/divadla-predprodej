@@ -37,6 +37,7 @@ jobs:
         run: python mdb_predprodej.py
         env:
           MDB_OUT: site/index.html
+          TZ: Europe/Prague
           MDB_CACHE_ONLY: ${{ (github.event_name == 'push' || inputs.cache_only) && '1' || '' }}
 
       - name: Uložit nově zjištěné adresy sálů
