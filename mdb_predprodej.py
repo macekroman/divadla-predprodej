@@ -164,6 +164,7 @@ function openHall(id, url) {{
   document.body.appendChild(f); f.submit(); f.remove();
   setTimeout(() => {{ if (w) w.location.href = url; }}, 2500);
 }}
+const fold = t => t.normalize('NFD').replace(/\\p{{Diacritic}}/gu, '').toLowerCase();  // bez diakritiky
 const tabs = [...document.querySelectorAll('#tabs button')];
 let month = '';
 function setMonth(m) {{
@@ -174,11 +175,11 @@ function setMonth(m) {{
   filter();
 }}
 function filter() {{
-  const q = document.getElementById('q').value.trim().toLowerCase();
+  const q = fold(document.getElementById('q').value.trim());
   const now = new Date();
   let shown = 0;
   for (const tr of document.querySelectorAll('tbody tr')) {{
-    const show = tr.dataset.title.includes(q)
+    const show = fold(tr.dataset.title).includes(q)
       && (month === 'all' || tr.dataset.month === month)
       && new Date(tr.dataset.start) > now;  // proběhlá představení skrýt
     tr.style.display = show ? '' : 'none';
