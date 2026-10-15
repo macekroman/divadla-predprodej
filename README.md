@@ -16,7 +16,7 @@ Nákup probíhá výhradně na webu divadla.
 ## Spuštění lokálně
 
 ```
-python mdb_predprodej.py            # aktuální a dva další měsíce
+python mdb_predprodej.py            # všechna budoucí představení v programu
 python mdb_predprodej.py 2026-12    # konkrétní měsíc
 ```
 

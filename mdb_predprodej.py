@@ -1,7 +1,7 @@
 """Vygeneruje HTML přehled představení MDB s proklikem přímo na mapu sálu.
 
 Použití:
-    python mdb_predprodej.py            # aktuální a dva další měsíce
+    python mdb_predprodej.py            # všechna budoucí představení, která už jsou v programu
     python mdb_predprodej.py 2026-12    # jen prosinec 2026
     python mdb_predprodej.py 2026-11 2026-12
 
@@ -39,18 +39,22 @@ def get_json(url):
         return json.load(r)
 
 
-def fetch_events(start, end):
-    """Projde stránkované API webu a vrátí představení v rozsahu [start, end)."""
+def fetch_events(start, end=None):
+    """Projde stránkované API webu a vrátí představení v rozsahu [start, end), bez end až do konce programu."""
+    params = {"start[after]": start.isoformat()}
+    if end:
+        params["start[before]"] = end.isoformat()
     events = {}
-    for page in range(1, 50):
-        q = urllib.parse.urlencode({"start[after]": start.isoformat(), "start[before]": end.isoformat(), "page": page})
+    for page in range(1, 200):
+        q = urllib.parse.urlencode({**params, "page": page})
         batch = get_json(f"{WEB}/api/event/events?{q}")
         new = [e for e in batch if e["id"] not in events]
         if not new:
             break
         for e in new:
             events[e["id"]] = e
-    return [e for e in events.values() if start.isoformat() <= e["start"][:10] < end.isoformat()]
+    return [e for e in events.values()
+            if start.isoformat() <= e["start"][:10] and (not end or e["start"][:10] < end.isoformat())]
 
 
 def hall_url(colosseum_id):
@@ -194,14 +198,14 @@ setMonth(location.hash.slice(1));
 
 
 def main():
-    months = sys.argv[1:]
-    if not months:
-        t = date.today()
-        months = [f"{t.year + (t.month + i - 1) // 12}-{(t.month + i - 1) % 12 + 1:02d}" for i in range(3)]
     events = []
-    for ym in months:
-        events += fetch_events(*month_range(ym))
+    if sys.argv[1:]:
+        for ym in sys.argv[1:]:
+            events += fetch_events(*month_range(ym))
+    else:
+        events = fetch_events(date.today())
     events.sort(key=lambda e: e["start"])
+    months = sorted({e["start"][:7] for e in events})
 
     urls = json.loads(CACHE.read_text(encoding="utf-8")) if CACHE.exists() else {}
     missing = [str(e["colosseumId"]) for e in events if e.get("colosseumId") and str(e["colosseumId"]) not in urls]
