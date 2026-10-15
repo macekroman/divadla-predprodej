@@ -25,7 +25,7 @@ SERVER = "https://server.mdb.cz"
 UA = "Mozilla/5.0 (mdb-predprodej)"
 OUT = Path(os.environ.get("MDB_OUT") or Path(__file__).with_name("mdb_predprodej.html"))
 CACHE = Path(__file__).with_name("hall_urls.json")
-PRICES = Path(__file__).with_name("prices.json")
+SEATS = Path(__file__).with_name("seats.json")
 
 
 def month_range(ym):
@@ -60,8 +60,9 @@ def fetch_events(start, end=None):
 
 
 def hall_info(colosseum_id, url=None):
-    """Projde vstupem /hall (jako tlačítko na webu), od PrepareDetail získá adresu sálu
-    (pokud ji ještě neznáme) a z legendy sálu přečte ceny. Vrací (url, ceny)."""
+    """Projde vstupem /hall (jako tlačítko na webu), od PrepareDetail získá adresu sálu (pokud ji
+    ještě neznáme) a z mapy sálu spočítá místa v cenových kategoriích.
+    Vrací (url, {cena: [míst celkem, volných]})."""
     jar = http.cookiejar.CookieJar()
     opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
     opener.addheaders = [("User-Agent", UA)]
@@ -72,11 +73,24 @@ def hall_info(colosseum_id, url=None):
         if not path.startswith("/mdb/"):
             return None, None
         url = SERVER + path
+    # Stránku sálu je potřeba načíst i kvůli ShowSeats – bez ní vrátí prázdnou mapu.
     page = opener.open(url, timeout=15).read().decode("utf-8", "replace")
-    # Legenda cenových kategorií: <div class="isLegenda is_seat ckt_N ..."> … 980,00 Kč
-    prices = {int(re.sub(r"\s", "", m.group(1)))
-              for m in re.finditer(r'isLegenda is_seat ckt_\d+[^"]*".{0,600}?([\d\s]+),\d\d\s*K', page, re.S)}
-    return url, sorted(prices)
+    # Legenda: <div class="isLegenda is_seat ckt_N ..."> … <input id='PriceCategory_Price_N' value="980" />
+    ckt_price = dict(re.findall(r"PriceCategory_Price_(\d+)' value=\"(\d+)\"", page))
+    section = re.search(r'id="HallSectionId" name="sectionid" value="([-0-9]+)"', page)
+    q = urllib.parse.urlencode({"eventid": colosseum_id, "sectionid": section.group(1) if section else "-2147483648",
+                                "currencyid": 1, "x": 0, "y": 0, "containerWidth": 1200, "ignoreMe": 1})
+    seats = opener.open(f"{SERVER}/mdb/standard/Hall/ShowSeats?{q}", timeout=15).read().decode("utf-8", "replace")
+    # Místo: class='position-absolute is_seat ckt_N cktIdx_M free|restricted|occupied'
+    cats = {}
+    for ckt, state in re.findall(r"class='[^']*is_seat ckt_(\d+)([^']*)'", seats):
+        price = ckt_price.get(ckt)
+        if not price:
+            continue
+        total_free = cats.setdefault(price, [0, 0])
+        total_free[0] += 1
+        total_free[1] += "occupied" not in state
+    return url, cats
 
 
 def safe_hall_info(cid, url=None, attempts=4):
@@ -110,14 +124,25 @@ def month_label(ym):
     return f"{MONTHS[m - 1].capitalize()} {y}"
 
 
-def price_label(p):
-    if not p:
+def price_range(prices):
+    lo, hi = min(prices), max(prices)
+    return f"{lo}&nbsp;Kč" if lo == hi else f"{lo}–{hi}&nbsp;Kč"
+
+
+def price_label(info):
+    """Rozsah cen, za které jsou ještě volná místa, s rozbalitelným rozpadem po kategoriích."""
+    cats = (info or {}).get("cats")
+    if not cats:
         return '<span class="muted">–</span>'
-    lo, hi = p[0], p[-1]
-    return f"{lo} Kč" if lo == hi else f"{lo}–{hi}&nbsp;Kč"
+    free = [int(p) for p, (_, f) in cats.items() if f]
+    summary = price_range(free) if free else '<span class="muted">nic volného</span>'
+    rows = "".join(f"<div>{p}&nbsp;Kč: <b>{f}</b> / {t}</div>"
+                   for p, (t, f) in sorted(cats.items(), key=lambda c: -int(c[0])))
+    return f'<details><summary>{summary}</summary><div class="cats">{rows}<div class="muted">volná / celkem</div></div></details>'
 
 
-def render(events, urls, prices, months):
+
+def render(events, urls, seats, months):
     generated = datetime.now().strftime("%d. %m. %Y %H:%M")
     stages = sorted({(e.get("stage") or {}).get("title") or "" for e in events} - {""})
     genres = sorted({genre_label(e) for e in events} - {""}, key=lambda g: list(GENRES.values()).index(g) if g in GENRES.values() else 99)
@@ -147,7 +172,7 @@ def render(events, urls, prices, months):
   <td class="date"><b>{dt.day}. {dt.month}.</b> {WEEKDAYS[dt.weekday()]}<br><span class="muted">{dt:%H:%M}</span></td>
   <td><a href="{prod_url}" target="_blank" rel="noopener">{title}</a><br><span class="muted">{" · ".join(x for x in (html.escape(genre_label(e)), stage) if x)}</span></td>
   <td class="num">{free_html}</td>
-  <td class="num">{price_label(prices.get(str(cid)))}</td>
+  <td class="num">{price_label(seats.get(str(cid)))}</td>
   <td class="num">{sale_txt}</td>
   <td>{btn}</td>
 </tr>""")
@@ -184,6 +209,8 @@ button {{ background:var(--accent); color:#fff; border:0; border-radius:8px; pad
 .free {{ display:inline-block; min-width:2.6em; text-align:center; font-weight:700; padding:2px 8px; border-radius:6px }}
 .free.ok {{ color:var(--ok); background:var(--ok-bg) }} .free.low {{ color:var(--low); background:var(--low-bg) }}
 .free.zero {{ color:var(--zero); background:var(--zero-bg) }}
+details summary {{ cursor:pointer; white-space:nowrap }}
+details .cats {{ margin-top:4px; font-size:13px; line-height:1.5 }}
 .filters {{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; }}
 @media (max-width:560px) {{ th:nth-child(5), td:nth-child(5) {{ display:none }} th, td {{ padding:10px 8px }} }}
 </style></head><body><main>
@@ -299,25 +326,27 @@ def main():
     months = sorted({e["start"][:7] for e in events})
 
     urls = json.loads(CACHE.read_text(encoding="utf-8")) if CACHE.exists() else {}
-    prices = json.loads(PRICES.read_text(encoding="utf-8")) if PRICES.exists() else {}
-    ids = [str(e["colosseumId"]) for e in events if e.get("colosseumId") and not e.get("canceled")]
-    missing = [cid for cid in ids if cid not in urls or cid not in prices]
+    seats = json.loads(SEATS.read_text(encoding="utf-8")) if SEATS.exists() else {}
+    caps = {str(e["colosseumId"]): e.get("availableCapacity")
+            for e in events if e.get("colosseumId") and not e.get("canceled")}
+    # Mapu sálu stahujeme jen tam, kde ještě není, nebo se od minula změnil počet volných míst podle API.
+    todo = [cid for cid, cap in caps.items() if cid not in urls or cid not in seats or seats[cid].get("cap") != cap]
     if os.environ.get("MDB_CACHE_ONLY"):  # rychlé nasazení jen z uložených dat, bez dotazů na server.mdb.cz
-        missing = []
-    print(f"Představení: {len(events)}, dohledávám sály/ceny: {len(missing)}", flush=True)
+        todo = []
+    print(f"Představení: {len(events)}, načítám sály: {len(todo)}", flush=True)
     # Po jednom a s pauzou – při souběžných dotazech server.mdb.cz přestane odpovídat.
-    for cid in missing:
-        url, p = safe_hall_info(cid, urls.get(cid))
+    for cid in todo:
+        url, cats = safe_hall_info(cid, urls.get(cid))
         if url:
             urls[cid] = url
             CACHE.write_text(json.dumps(urls, indent=1), encoding="utf-8")
-        if p is not None:
-            prices[cid] = p
-            PRICES.write_text(json.dumps(prices, indent=1), encoding="utf-8")
+        if cats is not None:
+            seats[cid] = {"cap": caps[cid], "cats": cats}
+            SEATS.write_text(json.dumps(seats, indent=1), encoding="utf-8")
         time.sleep(1)
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(render(events, urls, prices, months), encoding="utf-8")
+    OUT.write_text(render(events, urls, seats, months), encoding="utf-8")
     print(f"Hotovo: {OUT}")
 
 
