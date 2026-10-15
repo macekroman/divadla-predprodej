@@ -38,6 +38,7 @@ THEATRES = {
             "server": "https://online.colosseum.eu", "prefix": "ndbrno",
             "form": {"mrsid": 83, "language": "cs-CZ"}},
 }
+DEFAULT_THEATRE = "mdb"  # předvybrané divadlo ve filtru
 NDB_REFRESH = timedelta(hours=6)  # NdB nemá počet volných míst v API, mapu sálu obnovujeme podle stáří
 NDB_REFRESH_PER_RUN = 60
 
@@ -220,10 +221,11 @@ def free_count(e, info):
     return sum(f for _, f in cats.values()) if cats else None
 
 
-def select(group, all_label, options):
+def select(group, all_label, options, default=""):
     """Rozbalovací filtr; options jsou dvojice (hodnota, popisek), nebo (skupina, [dvojice]) pro <optgroup>."""
     def opts(items):
-        return "".join(f'<option value="{html.escape(v)}">{html.escape(label)}</option>' for v, label in items)
+        return "".join(f'<option value="{html.escape(v)}"{" selected" if v == default else ""}>{html.escape(label)}</option>'
+                       for v, label in items)
     body = "".join(f'<optgroup label="{html.escape(o[0])}" data-theatre="{html.escape(o[2])}">{opts(o[1])}</optgroup>'
                    if isinstance(o[1], list) else opts([o]) for o in options)
     return f'<select data-filter="{group}" onchange="filter()"><option value="">{all_label}</option>{body}</select>'
@@ -315,7 +317,7 @@ details .cats {{ margin-top:4px; font-size:13px; line-height:1.5 }}
 <div class="bar">
   <div class="tabs" id="months">{"".join(f'<button data-month="{m}">{month_label(m)}</button>' for m in months)}<button data-month="all">Vše</button></div>
   <div class="selects">
-    {select("theatre", "Všechna divadla", theatres)}
+    {select("theatre", "Všechna divadla", theatres, default=DEFAULT_THEATRE)}
     {select("genre", "Všechny žánry", [(g, g) for g in genres])}
     {select("stage", "Všechny scény", stages)}
   </div>
@@ -390,8 +392,9 @@ function filter() {{
 }}
 for (const b of monthTabs) b.onclick = () => setMonth(b.dataset.month);
 // Po výběru divadla nabízet jen jeho scény.
-document.querySelector('[data-filter=theatre]').addEventListener('change', e => {{
-  const theatre = e.target.value, stage = document.querySelector('[data-filter=stage]');
+const theatreSelect = document.querySelector('[data-filter=theatre]');
+theatreSelect.addEventListener('change', () => {{
+  const theatre = theatreSelect.value, stage = document.querySelector('[data-filter=stage]');
   for (const g of stage.querySelectorAll('optgroup')) g.hidden = g.disabled = !!theatre && g.dataset.theatre !== theatre;
   if (stage.value && theatre && !stage.value.startsWith(theatre + '|')) {{ stage.value = ''; filter(); }}
 }});
@@ -410,6 +413,7 @@ function cycleTheme() {{
 let savedTheme = 'auto';
 try {{ savedTheme = localStorage.getItem('theme') || 'auto'; }} catch (e) {{}}
 applyTheme(THEMES[savedTheme] ? savedTheme : 'auto');
+theatreSelect.dispatchEvent(new Event('change'));  // skrýt scény ostatních divadel i pro výchozí volbu
 window.onhashchange = () => setMonth(location.hash.slice(1));
 setMonth(location.hash.slice(1));
 </script></body></html>"""
