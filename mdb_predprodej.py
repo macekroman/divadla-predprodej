@@ -254,7 +254,7 @@ def render(events, urls, seats, months):
         meta = " · ".join(x for x in (t["short"], html.escape(e["genre"]), stage) if x)
         trs.append(f"""<tr data-title="{title.lower()}" data-month="{dt:%Y-%m}" data-theatre="{e['theatre']}" data-genre="{html.escape(e['genre'])}" data-stage="{stage}" data-start="{e['start']}" data-free="{cap if cap is not None else -1}">
   <td class="date"><b>{dt.day}. {dt.month}.</b> {WEEKDAYS[dt.weekday()]}<br><span class="muted">{dt:%H:%M}</span></td>
-  <td><a href="{html.escape(e['url'])}" target="_blank" rel="noopener">{title}</a><br><span class="muted">{meta}</span></td>
+  <td><a class="detail" href="{html.escape(e['url'])}" target="_blank" rel="noopener" title="Popis představení na webu divadla">{title}<span class="ext" aria-hidden="true">↗</span></a><br><span class="muted">{meta}</span></td>
   <td class="num">{free_html}</td>
   <td class="num">{price_label(info)}</td>
   <td class="num">{sale_txt}</td>
@@ -290,6 +290,8 @@ th, td {{ padding:10px 12px; border-bottom:1px solid var(--line); text-align:lef
 th {{ font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted) }}
 td.num, td.date {{ white-space:nowrap }}
 a {{ color:inherit; text-decoration-color:var(--line) }} a:hover {{ color:var(--accent) }}
+a.detail {{ font-weight:600; text-decoration-color:var(--muted); text-underline-offset:3px }}
+a.detail .ext {{ font-size:12px; margin-left:3px; color:var(--muted); text-decoration:none; display:inline-block }}
 button {{ background:var(--accent); color:#fff; border:0; border-radius:8px; padding:7px 14px; font-weight:600; cursor:pointer }}
 .note {{ font-size:13px; color:var(--muted); margin-top:16px }}
 .free {{ display:inline-block; min-width:2.6em; text-align:center; font-weight:700; padding:2px 8px; border-radius:6px }}
