@@ -1,0 +1,55 @@
+name: Aktualizace stránky
+
+on:
+  schedule:
+    # 5:15 a 17:15 UTC (ráno před otevřením předprodeje v 8:00 a večer)
+    - cron: "15 5,17 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Vygenerovat stránku
+        run: python mdb_predprodej.py
+        env:
+          MDB_OUT: site/index.html
+
+      - name: Uložit nově zjištěné adresy sálů
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898333+github-actions[bot]@users.noreply.github.com"
+          git add hall_urls.json
+          git diff --cached --quiet || (git commit -m "Aktualizace adres sálů" && git push)
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
