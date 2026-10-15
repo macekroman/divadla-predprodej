@@ -4,11 +4,12 @@ Divadla: Městské divadlo Brno (API webu) a Národní divadlo Brno (program z H
 Obě prodávají přes systém Colosseum, proto stejný postup pro adresu sálu i volná místa.
 
 Použití:
-    python mdb_predprodej.py            # všechna budoucí představení, která už jsou v programu
-    python mdb_predprodej.py 2026-12    # jen prosinec 2026
-    python mdb_predprodej.py 2026-11 2026-12
+    python divadla_predprodej.py            # všechna budoucí představení, která už jsou v programu
+    python divadla_predprodej.py 2026-12    # jen prosinec 2026
+    python divadla_predprodej.py 2026-11 2026-12
 
-Výstup: mdb_predprodej.html vedle skriptu (jinou cestu jde zadat proměnnou MDB_OUT).
+Výstup: divadla_predprodej.html vedle skriptu (jinou cestu jde zadat proměnnou OUT).
+S proměnnou CACHE_ONLY=1 se nic nenačítá z prodejních systémů, použijí se jen uložená data.
 Adresy sálů (token je pro představení stálý) jsou v hall_urls.json, volná místa podle cen v seats.json.
 """
 import html
@@ -23,8 +24,8 @@ import urllib.request
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
-UA = "Mozilla/5.0 (mdb-predprodej)"
-OUT = Path(os.environ.get("MDB_OUT") or Path(__file__).with_name("mdb_predprodej.html"))
+UA = "Mozilla/5.0 (divadla-predprodej)"
+OUT = Path(os.environ.get("OUT") or Path(__file__).with_name("divadla_predprodej.html"))
 CACHE = Path(__file__).with_name("hall_urls.json")
 SEATS = Path(__file__).with_name("seats.json")
 
@@ -447,7 +448,7 @@ def main():
 
     urls = json.loads(CACHE.read_text(encoding="utf-8")) if CACHE.exists() else {}
     seats = json.loads(SEATS.read_text(encoding="utf-8")) if SEATS.exists() else {}
-    todo = [] if os.environ.get("MDB_CACHE_ONLY") else todo_list(events, urls, seats)  # CACHE_ONLY: bez dotazů na prodejní systémy
+    todo = [] if os.environ.get("CACHE_ONLY") else todo_list(events, urls, seats)  # CACHE_ONLY: bez dotazů na prodejní systémy
     print(f"Načítám sály: {len(todo)}", flush=True)
     # Po jednom a s pauzou – při souběžných dotazech prodejní systém přestane odpovídat.
     for e in todo:

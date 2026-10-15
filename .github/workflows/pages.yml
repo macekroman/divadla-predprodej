@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       cache_only:
-        description: "Jen uložené adresy sálů (rychlé, bez dotazů na server.mdb.cz)"
+        description: "Jen uložené adresy sálů (rychlé, bez dotazů na prodejní systémy)"
         type: boolean
         default: false
   push:
@@ -34,11 +34,11 @@ jobs:
           python-version: "3.12"
 
       - name: Vygenerovat stránku
-        run: python mdb_predprodej.py
+        run: python divadla_predprodej.py
         env:
-          MDB_OUT: site/index.html
+          OUT: site/index.html
           TZ: Europe/Prague
-          MDB_CACHE_ONLY: ${{ (github.event_name == 'push' || inputs.cache_only) && '1' || '' }}
+          CACHE_ONLY: ${{ (github.event_name == 'push' || inputs.cache_only) && '1' || '' }}
 
       - name: Uložit adresy sálů a volná místa podle cen
         run: |

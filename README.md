@@ -19,8 +19,8 @@ i u představení, jejichž předprodej ještě nezačal. Nákup probíhá výhr
 ## Spuštění lokálně
 
 ```
-python mdb_predprodej.py            # všechna budoucí představení v programu
-python mdb_predprodej.py 2026-12    # konkrétní měsíc
+python divadla_predprodej.py            # všechna budoucí představení v programu
+python divadla_predprodej.py 2026-12    # konkrétní měsíc
 ```
 
 ## Zveřejnění
