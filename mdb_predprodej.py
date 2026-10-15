@@ -107,9 +107,16 @@ def render(events, urls, months):
             btn = '<span class="muted">sál nenačten</span>'
         else:
             btn = f'<button onclick="openHall({cid}, {html.escape(json.dumps(url))})">Sál</button>'
-        trs.append(f"""<tr data-title="{title.lower()}" data-month="{dt:%Y-%m}" data-start="{e['start']}">
+        cap = e.get("availableCapacity")  # počet volných míst, jak ho uvádí web mdb.cz
+        if cap is None:
+            free_html = '<span class="muted">–</span>'
+        else:
+            free_cls = "zero" if cap == 0 else ("low" if cap < 20 else "ok")
+            free_html = f'<span class="free {free_cls}">{cap}</span>'
+        trs.append(f"""<tr data-title="{title.lower()}" data-month="{dt:%Y-%m}" data-start="{e['start']}" data-free="{cap if cap is not None else -1}">
   <td class="date"><b>{dt.day}. {dt.month}.</b> {WEEKDAYS[dt.weekday()]}<br><span class="muted">{dt:%H:%M}</span></td>
   <td><a href="{prod_url}" target="_blank" rel="noopener">{title}</a><br><span class="muted">{stage} · ID {cid or '–'}</span></td>
+  <td class="num">{free_html}</td>
   <td class="num">{sale_txt}</td>
   <td>{btn}</td>
 </tr>""")
@@ -118,9 +125,10 @@ def render(events, urls, months):
 <html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MDB předprodej</title>
 <style>
-:root {{ --bg:#f6f7f9; --card:#fff; --fg:#1b1f24; --muted:#6b7280; --line:#e5e7eb; --accent:#b4003c; }}
+:root {{ --bg:#f6f7f9; --card:#fff; --fg:#1b1f24; --muted:#6b7280; --line:#e5e7eb; --accent:#b4003c;
+        --ok:#15803d; --low:#b45309; --zero:#b91c1c; }}
 @media (prefers-color-scheme: dark) {{ :root {{ --bg:#111418; --card:#1a1e24; --fg:#e8eaed; --muted:#9aa3ad;
-        --line:#2b313a; --accent:#ff5c8a; }} }}
+        --line:#2b313a; --accent:#ff5c8a; --ok:#4ade80; --low:#fbbf24; --zero:#f87171; }} }}
 * {{ box-sizing:border-box }}
 body {{ margin:0; background:var(--bg); color:var(--fg); font:15px/1.4 system-ui,-apple-system,Segoe UI,sans-serif; }}
 main {{ max-width:900px; margin:0 auto; padding:24px 16px; }}
@@ -139,22 +147,28 @@ td.num, td.date {{ white-space:nowrap }}
 a {{ color:inherit; text-decoration-color:var(--line) }} a:hover {{ color:var(--accent) }}
 button {{ background:var(--accent); color:#fff; border:0; border-radius:8px; padding:7px 14px; font-weight:600; cursor:pointer }}
 .note {{ font-size:13px; color:var(--muted); margin-top:16px }}
-@media (max-width:560px) {{ th:nth-child(3), td:nth-child(3) {{ display:none }} }}
+.free {{ font-weight:700; font-size:17px }} .free.ok {{ color:var(--ok) }} .free.low {{ color:var(--low) }} .free.zero {{ color:var(--zero) }}
+.filters {{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; }}
+@media (max-width:560px) {{ th:nth-child(4), td:nth-child(4) {{ display:none }} th, td {{ padding:10px 8px }} }}
 </style></head><body><main>
 <h1>MDB – sály představení</h1>
-<div class="muted">Seznam k {generated} · neoficiální rozcestník, nákup probíhá přímo na <a href="{WEB}" target="_blank" rel="noopener">mdb.cz</a></div>
+<div class="muted">Seznam a volná místa k {generated} · neoficiální rozcestník, nákup probíhá přímo na <a href="{WEB}" target="_blank" rel="noopener">mdb.cz</a></div>
 <div class="bar">
   <div class="tabs" id="tabs">{"".join(f'<button data-month="{m}">{month_label(m)}</button>' for m in months)}<button data-month="all">Vše</button></div>
-  <input type="search" id="q" placeholder="Hledat představení…" oninput="filter()">
+  <div class="filters">
+    <input type="search" id="q" placeholder="Hledat představení…" oninput="filter()">
+    <label><input type="checkbox" id="onlyFree" onchange="filter()"> jen s volnými místy</label>
+  </div>
 </div>
-<table><thead><tr><th>Datum</th><th>Představení</th><th>Předprodej od</th><th></th></tr></thead>
+<table><thead><tr><th>Datum</th><th>Představení</th><th>Volno</th><th>Předprodej od</th><th></th></tr></thead>
 <tbody>
 {chr(10).join(trs)}
 </tbody></table>
 <div class="empty" id="empty" hidden>Žádná představení.</div>
 <p class="note">„Sál“ otevře novou záložku, v ní nejdřív otevře představení na server.mdb.cz a po 2,5 s přejde na aktuální mapu sálu.
 Pokud zůstane na hlášce „Na tuto akci není možné provádět rezervace“, klikni na „Sál“ znovu.
-Před začátkem předprodeje jsou místa vidět, ale nejdou vybrat.</p>
+Před začátkem předprodeje jsou místa vidět, ale nejdou vybrat.
+„Volno“ je počet volných míst, jak ho uvádí web mdb.cz, aktualizovaný zhruba každou hodinu; přesný stav ukáže mapa sálu.</p>
 </main>
 <script>
 function openHall(id, url) {{
@@ -180,11 +194,13 @@ function setMonth(m) {{
 }}
 function filter() {{
   const q = fold(document.getElementById('q').value.trim());
+  const onlyFree = document.getElementById('onlyFree').checked;
   const now = new Date();
   let shown = 0;
   for (const tr of document.querySelectorAll('tbody tr')) {{
     const show = fold(tr.dataset.title).includes(q)
       && (month === 'all' || tr.dataset.month === month)
+      && (!onlyFree || +tr.dataset.free > 0)
       && new Date(tr.dataset.start) > now;  // proběhlá představení skrýt
     tr.style.display = show ? '' : 'none';
     shown += show;
