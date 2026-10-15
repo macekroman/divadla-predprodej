@@ -22,6 +22,6 @@ python mdb_predprodej.py 2026-12    # konkrétní měsíc
 
 ## Zveřejnění
 
-GitHub Actions (`.github/workflows/pages.yml`) stránku dvakrát denně přegeneruje, uloží nové
+GitHub Actions (`.github/workflows/pages.yml`) stránku každou hodinu přegeneruje (včetně počtu volných míst z API webu), uloží nové
 adresy sálů do repozitáře a nasadí ji na GitHub Pages. Spustit ručně jde přes záložku Actions
 → „Aktualizace stránky“ → Run workflow.

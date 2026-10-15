@@ -2,8 +2,8 @@ name: Aktualizace stránky
 
 on:
   schedule:
-    # 5:15 a 17:15 UTC (ráno před otevřením předprodeje v 8:00 a večer)
-    - cron: "15 5,17 * * *"
+    # každou hodinu: obnoví volná místa a dohledá sály jen u nově vypsaných představení
+    - cron: "15 * * * *"
   workflow_dispatch:
     inputs:
       cache_only:
