@@ -196,6 +196,13 @@ def month_label(ym):
     return f"{MONTHS[m - 1].capitalize()} {y}"
 
 
+def month_button(ym):
+    """Tlačítko měsíce: plný popisek, na mobilu zkrácený („Led 27“ jen mimo letošní rok)."""
+    y, m = map(int, ym.split("-"))
+    short = MONTHS[m - 1][:3].capitalize() + ("" if y == date.today().year else f" {y % 100}")
+    return f'<button data-month="{ym}"><span class="long">{month_label(ym)}</span><span class="short">{short}</span></button>'
+
+
 def price_range(prices):
     lo, hi = min(prices), max(prices)
     return f"{lo}&nbsp;Kč" if lo == hi else f"{lo}–{hi}&nbsp;Kč"
@@ -310,12 +317,36 @@ button {{ background:var(--accent); color:#fff; border:0; border-radius:8px; pad
 details summary {{ cursor:pointer; white-space:nowrap }}
 details .cats {{ margin-top:4px; font-size:13px; line-height:1.5 }}
 .filters {{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; }}
-@media (max-width:560px) {{ th:nth-child(5), td:nth-child(5) {{ display:none }} th, td {{ padding:10px 8px }} }}
+.tabs .short {{ display:none }}
+/* Mobil: měsíce v mřížce, filtry pod sebou a z tabulky karty – bez vodorovného posouvání. */
+@media (max-width:560px) {{
+  main {{ padding:16px 12px; }}
+  h1 {{ font-size:18px; }}
+  #months {{ display:grid; grid-template-columns:repeat(4, 1fr); }}
+  #months button {{ padding:7px 4px; }}
+  .tabs .long {{ display:none }} .tabs .short {{ display:inline }}
+  .selects {{ display:grid; grid-template-columns:1fr 1fr; }}
+  .selects select:first-child {{ grid-column:1 / -1; }}
+  .selects select {{ width:100%; min-width:0; }}
+  .filters {{ display:grid; gap:8px; }}
+  input[type=search] {{ max-width:none; }}
+  thead {{ display:none; }}
+  table, tbody {{ display:block; }}
+  tbody tr {{ display:grid; grid-template-columns:4.7em minmax(0, 1fr) auto; grid-template-areas:"date title title" "free price btn";
+              gap:8px 12px; align-items:center; padding:12px; border-bottom:1px solid var(--line); }}
+  tbody td {{ display:block; padding:0; border:0; min-width:0; }}
+  tbody td:nth-child(1) {{ grid-area:date; align-self:start; }}
+  tbody td:nth-child(2) {{ grid-area:title; }}
+  tbody td:nth-child(3) {{ grid-area:free; }}
+  tbody td:nth-child(4) {{ grid-area:price; }}
+  tbody td:nth-child(5) {{ display:none; }}
+  tbody td:nth-child(6) {{ grid-area:btn; }}
+}}
 </style></head><body><main>
 <div class="top"><h1>Brněnská divadla – sály a volná místa</h1><button id="theme" onclick="cycleTheme()"></button></div>
 <div class="muted">Seznam a volná místa k {generated} · neoficiální rozcestník, nákup probíhá přímo na webu {links}</div>
 <div class="bar">
-  <div class="tabs" id="months">{"".join(f'<button data-month="{m}">{month_label(m)}</button>' for m in months)}<button data-month="all">Vše</button></div>
+  <div class="tabs" id="months">{"".join(month_button(m) for m in months)}<button data-month="all">Vše</button></div>
   <div class="selects">
     {select("theatre", "Všechna divadla", theatres, default=DEFAULT_THEATRE)}
     {select("genre", "Všechny žánry", [(g, g) for g in genres])}
