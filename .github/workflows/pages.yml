@@ -40,12 +40,12 @@ jobs:
           TZ: Europe/Prague
           MDB_CACHE_ONLY: ${{ (github.event_name == 'push' || inputs.cache_only) && '1' || '' }}
 
-      - name: Uložit nově zjištěné adresy sálů
+      - name: Uložit nově zjištěné adresy sálů a ceny
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898333+github-actions[bot]@users.noreply.github.com"
-          git add hall_urls.json
-          git diff --cached --quiet || (git commit -m "Aktualizace adres sálů" && git push)
+          git add hall_urls.json prices.json
+          git diff --cached --quiet || (git commit -m "Aktualizace adres sálů a cen" && git push)
 
       - uses: actions/upload-pages-artifact@v3
         with:
