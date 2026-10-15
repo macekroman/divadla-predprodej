@@ -220,15 +220,21 @@ def free_count(e, info):
     return sum(f for _, f in cats.values()) if cats else None
 
 
-def tabs(group, items, all_label):
-    buttons = "".join(f'<button data-v="{html.escape(v)}">{html.escape(label)}</button>' for v, label in items)
-    return f'<div class="tabs small" data-filter="{group}"><button data-v="" class="active">{all_label}</button>{buttons}</div>'
+def select(group, all_label, options):
+    """Rozbalovací filtr; options jsou dvojice (hodnota, popisek), nebo (skupina, [dvojice]) pro <optgroup>."""
+    def opts(items):
+        return "".join(f'<option value="{html.escape(v)}">{html.escape(label)}</option>' for v, label in items)
+    body = "".join(f'<optgroup label="{html.escape(o[0])}" data-theatre="{html.escape(o[2])}">{opts(o[1])}</optgroup>'
+                   if isinstance(o[1], list) else opts([o]) for o in options)
+    return f'<select data-filter="{group}" onchange="filter()"><option value="">{all_label}</option>{body}</select>'
 
 
 def render(events, urls, seats, months):
     generated = datetime.now().strftime("%d. %m. %Y %H:%M")
-    theatres = [(k, t["short"]) for k, t in THEATRES.items() if any(e["theatre"] == k for e in events)]
-    stages = sorted({e["stage"] for e in events} - {""})
+    theatres = [(k, t["name"]) for k, t in THEATRES.items() if any(e["theatre"] == k for e in events)]
+    # Scény seskupené podle divadla; hodnota nese i divadlo („mdb|Hudební scéna“), aby se nepletly.
+    stages = [(name, [(f"{k}|{st}", st) for st in sorted({e["stage"] for e in events if e["theatre"] == k} - {""})], k)
+              for k, name in theatres]
     genres = sorted({e["genre"] for e in events} - {""},
                     key=lambda g: (GENRE_ORDER.index(g) if g in GENRE_ORDER else 99, g))
     trs = []
@@ -253,7 +259,7 @@ def render(events, urls, seats, months):
             free_cls = "zero" if cap == 0 else ("low" if cap < 20 else "ok")
             free_html = f'<span class="free {free_cls}">{cap}</span>'
         meta = " · ".join(x for x in (t["short"], html.escape(e["genre"]), stage) if x)
-        trs.append(f"""<tr data-title="{title.lower()}" data-month="{dt:%Y-%m}" data-theatre="{e['theatre']}" data-genre="{html.escape(e['genre'])}" data-stage="{stage}" data-start="{e['start']}" data-free="{cap if cap is not None else -1}">
+        trs.append(f"""<tr data-title="{title.lower()}" data-month="{dt:%Y-%m}" data-theatre="{e['theatre']}" data-genre="{html.escape(e['genre'])}" data-stage="{e['theatre']}|{stage}" data-start="{e['start']}" data-free="{cap if cap is not None else -1}">
   <td class="date"><b>{dt.day}. {dt.month}.</b> {WEEKDAYS[dt.weekday()]}<br><span class="muted">{dt:%H:%M}</span></td>
   <td><a class="detail" href="{html.escape(e['url'])}" target="_blank" rel="noopener" title="Popis představení na webu divadla">{title}<span class="ext" aria-hidden="true">↗</span></a><br><span class="muted">{meta}</span></td>
   <td class="num">{free_html}</td>
@@ -280,7 +286,8 @@ h1 {{ margin:0 0 4px; font-size:22px }}
 .bar {{ margin:16px 0; display:flex; flex-direction:column; gap:10px; }}
 .tabs {{ display:flex; flex-wrap:wrap; gap:6px; }}
 .tabs button {{ background:var(--card); color:var(--fg); border:1px solid var(--line); font-weight:500; }}
-.tabs.small button {{ padding:4px 10px; font-size:13px; }}
+.selects {{ display:flex; flex-wrap:wrap; gap:8px; }}
+select {{ padding:7px 10px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--fg); font:inherit; font-size:14px; max-width:100%; }}
 .top {{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }}
 #theme {{ background:var(--card); color:var(--fg); border:1px solid var(--line); font-weight:500; padding:5px 10px; font-size:13px; white-space:nowrap; }}
 .tabs button.active {{ background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }}
@@ -307,9 +314,11 @@ details .cats {{ margin-top:4px; font-size:13px; line-height:1.5 }}
 <div class="muted">Seznam a volná místa k {generated} · neoficiální rozcestník, nákup probíhá přímo na webu {links}</div>
 <div class="bar">
   <div class="tabs" id="months">{"".join(f'<button data-month="{m}">{month_label(m)}</button>' for m in months)}<button data-month="all">Vše</button></div>
-  {tabs("theatre", theatres, "Všechna divadla")}
-  {tabs("genre", [(g, g) for g in genres], "Všechny žánry")}
-  {tabs("stage", [(s, s) for s in stages], "Všechny scény")}
+  <div class="selects">
+    {select("theatre", "Všechna divadla", theatres)}
+    {select("genre", "Všechny žánry", [(g, g) for g in genres])}
+    {select("stage", "Všechny scény", stages)}
+  </div>
   <div class="filters">
     <input type="search" id="q" placeholder="Hledat představení…" oninput="filter()">
     <label><input type="checkbox" id="onlyFree" onchange="filter()"> jen s volnými místy</label>
@@ -365,7 +374,7 @@ function filter() {{
   const q = fold(document.getElementById('q').value.trim());
   const onlyFree = document.getElementById('onlyFree').checked;
   const sel = {{}};
-  for (const g of document.querySelectorAll('[data-filter]')) sel[g.dataset.filter] = g.querySelector('.active').dataset.v;
+  for (const g of document.querySelectorAll('[data-filter]')) sel[g.dataset.filter] = g.value;
   const now = new Date();
   let shown = 0;
   for (const tr of document.querySelectorAll('tbody tr')) {{
@@ -380,13 +389,12 @@ function filter() {{
   document.getElementById('empty').hidden = shown > 0;
 }}
 for (const b of monthTabs) b.onclick = () => setMonth(b.dataset.month);
-for (const g of document.querySelectorAll('[data-filter]')) {{
-  const group = g.querySelectorAll('button');
-  for (const b of group) b.onclick = () => {{
-    for (const o of group) o.classList.toggle('active', o === b);
-    filter();
-  }};
-}}
+// Po výběru divadla nabízet jen jeho scény.
+document.querySelector('[data-filter=theatre]').addEventListener('change', e => {{
+  const theatre = e.target.value, stage = document.querySelector('[data-filter=stage]');
+  for (const g of stage.querySelectorAll('optgroup')) g.hidden = g.disabled = !!theatre && g.dataset.theatre !== theatre;
+  if (stage.value && theatre && !stage.value.startsWith(theatre + '|')) {{ stage.value = ''; filter(); }}
+}});
 const THEMES = {{auto: 'Motiv: auto', light: 'Motiv: světlý', dark: 'Motiv: tmavý'}};
 function applyTheme(t) {{
   if (t === 'auto') document.documentElement.removeAttribute('data-theme');
