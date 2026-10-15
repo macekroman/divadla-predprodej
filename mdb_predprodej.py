@@ -126,9 +126,9 @@ def render(events, urls, months):
 <title>MDB předprodej</title>
 <style>
 :root {{ --bg:#f6f7f9; --card:#fff; --fg:#1b1f24; --muted:#6b7280; --line:#e5e7eb; --accent:#b4003c;
-        --ok:#15803d; --low:#b45309; --zero:#b91c1c; }}
+        --ok:#15803d; --low:#a16207; --zero:#b91c1c; }}
 @media (prefers-color-scheme: dark) {{ :root {{ --bg:#111418; --card:#1a1e24; --fg:#e8eaed; --muted:#9aa3ad;
-        --line:#2b313a; --accent:#ff5c8a; --ok:#4ade80; --low:#fbbf24; --zero:#f87171; }} }}
+        --line:#2b313a; --accent:#ff5c8a; --ok:#4ade80; --low:#facc15; --zero:#f87171; }} }}
 * {{ box-sizing:border-box }}
 body {{ margin:0; background:var(--bg); color:var(--fg); font:15px/1.4 system-ui,-apple-system,Segoe UI,sans-serif; }}
 main {{ max-width:900px; margin:0 auto; padding:24px 16px; }}
