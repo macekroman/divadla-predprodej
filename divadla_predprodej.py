@@ -139,7 +139,7 @@ def parse_ndb_block(b):
 def hall_info(theatre, cid, url=None):
     """Projde vstupem /hall (jako tlačítko na webu), od PrepareDetail získá adresu sálu (pokud ji
     ještě neznáme) a z mapy sálu spočítá místa v cenových kategoriích.
-    Vrací (url, {cena: [míst celkem, volných]})."""
+    Vrací (url, {"cats": {cena: [míst celkem, volných]}, "on_sale": bool})."""
     t = THEATRES[theatre]
     server, base = t["server"], f'{t["server"]}/{t["prefix"]}/standard/Hall'
     o = opener()
@@ -168,7 +168,7 @@ def hall_info(theatre, cid, url=None):
         total_free = cats.setdefault(price, [0, 0])
         total_free[0] += 1
         total_free[1] += "occupied" not in state
-    return url, cats
+    return url, {"cats": cats, "on_sale": "Akce není v prodeji" not in page}
 
 
 def safe_hall_info(theatre, cid, url=None, attempts=4):
@@ -197,9 +197,9 @@ def month_label(ym):
 
 
 def month_button(ym):
-    """Tlačítko měsíce: plný popisek, na mobilu zkrácený („Led 27“ jen mimo letošní rok)."""
+    """Tlačítko měsíce: plný popisek, na mobilu zkrácený („Led 27“)."""
     y, m = map(int, ym.split("-"))
-    short = MONTHS[m - 1][:3].capitalize() + ("" if y == date.today().year else f" {y % 100}")
+    short = f"{MONTHS[m - 1][:3].capitalize()} {y % 100}"
     return f'<button data-month="{ym}"><span class="long">{month_label(ym)}</span><span class="short">{short}</span></button>'
 
 
@@ -260,7 +260,10 @@ def render(events, urls, seats, months):
         elif not url:
             btn = '<span class="muted">odkaz zatím nenačten</span>'
         else:
-            btn = f'<button onclick="openHall(\'{e["theatre"]}\', {e["cid"]}, {html.escape(json.dumps(url))})">Vstupenky</button>'
+            # Je-li představení v prodeji, dovede na sál oficiální postup sám (viz openHall).
+            on_sale = (info or {}).get("on_sale")
+            args = ", ".join(json.dumps(a) for a in (e["theatre"], e["cid"], url, on_sale, e["sale"]))
+            btn = f'<button onclick="openHall({html.escape(args)})">Vstupenky</button>'
         cap = free_count(e, info)
         if cap is None:
             free_html = '<span class="muted">–</span>'
@@ -370,7 +373,7 @@ Ceny jsou základní ceny cenových kategorií, ve kterých jsou ještě volná 
 </main>
 <script>
 const THEATRES = {json.dumps(config)};
-function openHall(theatre, id, url) {{
+function openHall(theatre, id, url, onSale, saleStart) {{
   const t = THEATRES[theatre];
   const name = 'hall_' + id + '_' + Date.now();
   const w = window.open('about:blank', name);
@@ -380,6 +383,8 @@ function openHall(theatre, id, url) {{
     const i = document.createElement('input'); i.type = 'hidden'; i.name = k; i.value = v; f.appendChild(i);
   }}
   document.body.appendChild(f); f.submit(); f.remove();
+  // V prodeji: čekací stránka divadla na sál přesměruje sama, další přesměrování by ho jen načetlo znovu.
+  if (onSale || (saleStart && new Date(saleStart) <= new Date())) return;
   if (!w) return;
   // Dokud je záložka about:blank, vidíme do ní. Jakmile se v ní načte prodejní systém (po všech
   // přesměrováních, takže cookie session už je nastavená), přístup vyhodí výjimku – pak přepneme na sál.
@@ -496,12 +501,12 @@ def main():
     # Po jednom a s pauzou – při souběžných dotazech prodejní systém přestane odpovídat.
     for e in todo:
         k = key(e)
-        url, cats = safe_hall_info(e["theatre"], e["cid"], urls.get(k))
+        url, hall = safe_hall_info(e["theatre"], e["cid"], urls.get(k))
         if url:
             urls[k] = url
             CACHE.write_text(json.dumps(urls, indent=1), encoding="utf-8")
-        if cats is not None:
-            seats[k] = {"cap": e["cap"], "cats": cats, "ts": datetime.now().isoformat(timespec="seconds")}
+        if hall is not None:
+            seats[k] = {"cap": e["cap"], **hall, "ts": datetime.now().isoformat(timespec="seconds")}
             SEATS.write_text(json.dumps(seats, indent=1), encoding="utf-8")
         time.sleep(1)
 
