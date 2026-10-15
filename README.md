@@ -1,12 +1,15 @@
-# MDB – sály představení
+# Brněnská divadla – sály a volná místa
 
-Neoficiální rozcestník: seznam představení Městského divadla Brno s tlačítkem, které otevře
-mapu sálu v prodejním systému (server.mdb.cz) – i u představení, jejichž předprodej ještě nezačal.
-Nákup probíhá výhradně na webu divadla.
+Neoficiální rozcestník: seznam představení Městského divadla Brno a Národního divadla Brno
+s počtem volných míst, cenami a tlačítkem, které otevře mapu sálu v prodejním systému Colosseum –
+i u představení, jejichž předprodej ještě nezačal. Nákup probíhá výhradně na webech divadel.
 
 ## Jak to funguje
 
-- Seznam představení se bere z API webu `https://www.mdb.cz/api/event/events`.
+- MDB: seznam představení se bere z API webu `https://www.mdb.cz/api/event/events`
+  (včetně počtu volných míst `availableCapacity`).
+- NdB: program se čte z HTML stránek `https://www.ndbrno.cz/program/?month=M&years=R`;
+  z formuláře „Vstupenky“ se bere `eventid` (prodejní systém `online.colosseum.eu`, `mrsid=83`).
 - Tlačítko „Koupit vstupenky“ na webu posílá POST na `https://server.mdb.cz/hall` (`mrsid=1`, `eventid`).
   Session si pak pamatuje představení a `/mdb/standard/Hall/PrepareDetail` vrátí adresu sálu
   `Hall/Index/<id>/<token>`. Token je pro představení stálý, proto se ukládá do `hall_urls.json`.

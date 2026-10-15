@@ -1,12 +1,15 @@
-"""Vygeneruje HTML přehled představení MDB s proklikem přímo na mapu sálu.
+"""Vygeneruje HTML přehled představení brněnských divadel s proklikem přímo na mapu sálu.
+
+Divadla: Městské divadlo Brno (API webu) a Národní divadlo Brno (program z HTML webu).
+Obě prodávají přes systém Colosseum, proto stejný postup pro adresu sálu i volná místa.
 
 Použití:
     python mdb_predprodej.py            # všechna budoucí představení, která už jsou v programu
     python mdb_predprodej.py 2026-12    # jen prosinec 2026
     python mdb_predprodej.py 2026-11 2026-12
 
-Výstup: mdb_predprodej.html vedle skriptu (jinou cestu jde zadat proměnnou MDB_OUT). Adresy sálů (token je pro představení
-stálý) se ukládají do hall_urls.json, takže další běhy se ptají jen na nová představení.
+Výstup: mdb_predprodej.html vedle skriptu (jinou cestu jde zadat proměnnou MDB_OUT).
+Adresy sálů (token je pro představení stálý) jsou v hall_urls.json, volná místa podle cen v seats.json.
 """
 import html
 import http.cookiejar
@@ -17,22 +20,36 @@ import sys
 import time
 import urllib.parse
 import urllib.request
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
-WEB = "https://www.mdb.cz"
-SERVER = "https://server.mdb.cz"
 UA = "Mozilla/5.0 (mdb-predprodej)"
 OUT = Path(os.environ.get("MDB_OUT") or Path(__file__).with_name("mdb_predprodej.html"))
 CACHE = Path(__file__).with_name("hall_urls.json")
 SEATS = Path(__file__).with_name("seats.json")
 
+# Pole "form" odpovídají formuláři, který posílá tlačítko „Koupit vstupenky“ na webu divadla.
+THEATRES = {
+    "mdb": {"name": "Městské divadlo Brno", "short": "MDB", "web": "https://www.mdb.cz",
+            "server": "https://server.mdb.cz", "prefix": "mdb",
+            "form": {"mrsid": 1, "language": "cs", "currency": "CZK"}},
+    "ndb": {"name": "Národní divadlo Brno", "short": "NdB", "web": "https://www.ndbrno.cz",
+            "server": "https://online.colosseum.eu", "prefix": "ndbrno",
+            "form": {"mrsid": 83, "language": "cs-CZ"}},
+}
+NDB_REFRESH = timedelta(hours=6)  # NdB nemá počet volných míst v API, mapu sálu obnovujeme podle stáří
+NDB_REFRESH_PER_RUN = 60
 
-def month_range(ym):
-    y, m = map(int, ym.split("-"))
-    start = date(y, m, 1)
-    end = date(y + (m == 12), m % 12 + 1, 1)
-    return start, end
+
+def key(e):
+    """Klíč do hall_urls.json / seats.json; u MDB holé ID kvůli zpětné kompatibilitě."""
+    return e["cid"] if e["theatre"] == "mdb" else f'{e["theatre"]}:{e["cid"]}'
+
+
+def opener():
+    o = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+    o.addheaders = [("User-Agent", UA)]
+    return o
 
 
 def get_json(url):
@@ -41,46 +58,105 @@ def get_json(url):
         return json.load(r)
 
 
-def fetch_events(start, end=None):
-    """Projde stránkované API webu a vrátí představení v rozsahu [start, end), bez end až do konce programu."""
-    params = {"start[after]": start.isoformat()}
-    if end:
-        params["start[before]"] = end.isoformat()
-    events = {}
+# --- Městské divadlo Brno: JSON API webu ---
+
+MDB_GENRES = {"Drama": "Činohra", "Musical": "Muzikál", "Concert": "Koncert", "Opera": "Opera",
+              "Ballet": "Balet", "Dance": "Tanec", "Show": "Show"}
+
+
+def fetch_mdb():
+    web = THEATRES["mdb"]["web"]
+    raw = {}
     for page in range(1, 200):
-        q = urllib.parse.urlencode({**params, "page": page})
-        batch = get_json(f"{WEB}/api/event/events?{q}")
-        new = [e for e in batch if e["id"] not in events]
+        q = urllib.parse.urlencode({"start[after]": date.today().isoformat(), "page": page})
+        new = [e for e in get_json(f"{web}/api/event/events?{q}") if e["id"] not in raw]
         if not new:
             break
-        for e in new:
-            events[e["id"]] = e
-    return [e for e in events.values()
-            if start.isoformat() <= e["start"][:10] and (not end or e["start"][:10] < end.isoformat())]
+        raw.update((e["id"], e) for e in new)
+    events = []
+    for e in raw.values():
+        g = e["production"].get("genre") or ""
+        cid = e.get("colosseumId")
+        events.append({
+            "theatre": "mdb", "cid": str(cid) if cid else None, "start": e["start"],
+            "title": e["production"]["title"], "url": web + e["production"]["url"],
+            "stage": (e.get("stage") or {}).get("title") or "", "genre": MDB_GENRES.get(g, g),
+            "sale": e.get("saleStartAt"), "cap": e.get("availableCapacity"),
+            "note": "zrušeno" if e.get("canceled") else (None if cid else "bez prodeje"),
+        })
+    return events
 
 
-def hall_info(colosseum_id, url=None):
+# --- Národní divadlo Brno: program z HTML webu, po měsících ---
+
+def text(s):
+    return re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", s))).strip()
+
+
+def fetch_ndb():
+    web = THEATRES["ndb"]["web"]
+    o = opener()
+    first = o.open(f"{web}/program/", timeout=30).read().decode("utf-8", "replace")
+    # Přepínač měsíců: <a href="" data-month="11" data-year="2026">
+    months = re.findall(r'data-month="(\d+)" data-year="(\d+)"', first) or [(str(date.today().month), str(date.today().year))]
+    events = {}
+    for m, y in months:
+        page = o.open(f"{web}/program/?month={m}&years={y}", timeout=30).read().decode("utf-8", "replace")
+        for block in re.split(r'<div class="cl-k col', page)[1:]:
+            e = parse_ndb_block(block)
+            if e:
+                events[(e["cid"], e["start"]) if e["cid"] else (e["title"], e["start"])] = e
+        time.sleep(1)
+    return list(events.values())
+
+
+def parse_ndb_block(b):
+    when = re.search(r"<li>(\d\d)/(\d\d)/(\d{4})</li>\s*<li>(\d\d):(\d\d)", b)
+    title = re.search(r'<h3 class="etzar">(.*?)</h3>', b, re.S)
+    if not when or not title:
+        return None  # bez času: zájezdy apod.
+    cid = re.search(r'value="83" name="mrsid">\s*<input type="hidden" name="eventid" value="(\d+)"', b)
+    sold_out = "view-oversell" in b
+    if not cid and not sold_out:
+        return None  # zadaná představení pro školy a firmy, pronájmy, akce bez vstupenek
+    d, mo, y, hh, mm = when.groups()
+    url = re.search(r'<a href="([^"]+)" class="screen"', b)
+    stage = re.search(r'/budova/[^"]*"><strong>(.*?)</strong>', b)
+    genre = re.search(r'href="[^"]*/(?:opery|cinohry|balety)/">([^<]+)</a>', b)
+    stage_txt = text(stage.group(1)) if stage else ""
+    return {
+        "theatre": "ndb", "cid": cid.group(1) if cid else None, "start": f"{y}-{mo}-{d}T{hh}:{mm}:00",
+        "title": text(title.group(1)), "url": url.group(1) if url else THEATRES["ndb"]["web"],
+        "stage": stage_txt[:1].upper() + stage_txt[1:], "genre": text(genre.group(1)) if genre else "",
+        "sale": None, "cap": 0 if sold_out else None, "note": "vyprodáno" if sold_out else None,
+    }
+
+
+# --- Colosseum: adresa sálu a mapa míst ---
+
+def hall_info(theatre, cid, url=None):
     """Projde vstupem /hall (jako tlačítko na webu), od PrepareDetail získá adresu sálu (pokud ji
     ještě neznáme) a z mapy sálu spočítá místa v cenových kategoriích.
     Vrací (url, {cena: [míst celkem, volných]})."""
-    jar = http.cookiejar.CookieJar()
-    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
-    opener.addheaders = [("User-Agent", UA)]
-    data = urllib.parse.urlencode({"mrsid": 1, "eventid": colosseum_id, "language": "cs", "currency": "CZK"}).encode()
-    opener.open(f"{SERVER}/hall", data, timeout=15).read()
+    t = THEATRES[theatre]
+    server, base = t["server"], f'{t["server"]}/{t["prefix"]}/standard/Hall'
+    o = opener()
+    o.open(f"{server}/hall", urllib.parse.urlencode({**t["form"], "eventid": cid}).encode(), timeout=15).read()
     if not url:
-        path = opener.open(f"{SERVER}/mdb/standard/Hall/PrepareDetail", timeout=15).read().decode().strip()
-        if not path.startswith("/mdb/"):
+        path = o.open(f"{base}/PrepareDetail", timeout=15).read().decode().strip()
+        if not path.startswith(f'/{t["prefix"]}/'):
             return None, None
-        url = SERVER + path
+        url = server + path
     # Stránku sálu je potřeba načíst i kvůli ShowSeats – bez ní vrátí prázdnou mapu.
-    page = opener.open(url, timeout=15).read().decode("utf-8", "replace")
-    # Legenda: <div class="isLegenda is_seat ckt_N ..."> … <input id='PriceCategory_Price_N' value="980" />
+    page = o.open(url, timeout=15).read().decode("utf-8", "replace")
+    # Legenda: <input type="hidden" id='PriceCategory_Price_N' value="980" />
     ckt_price = dict(re.findall(r"PriceCategory_Price_(\d+)' value=\"(\d+)\"", page))
     section = re.search(r'id="HallSectionId" name="sectionid" value="([-0-9]+)"', page)
-    q = urllib.parse.urlencode({"eventid": colosseum_id, "sectionid": section.group(1) if section else "-2147483648",
-                                "currencyid": 1, "x": 0, "y": 0, "containerWidth": 1200, "ignoreMe": 1})
-    seats = opener.open(f"{SERVER}/mdb/standard/Hall/ShowSeats?{q}", timeout=15).read().decode("utf-8", "replace")
+    currency = re.search(r'id="HallCurrencyId" name="currencyid" value="(\d+)"', page)
+    q = urllib.parse.urlencode({"eventid": cid, "sectionid": section.group(1) if section else "-2147483648",
+                                "currencyid": currency.group(1) if currency else 1,
+                                "x": 0, "y": 0, "containerWidth": 1200, "ignoreMe": 1})
+    seats = o.open(f"{base}/ShowSeats?{q}", timeout=15).read().decode("utf-8", "replace")
     # Místo: class='position-absolute is_seat ckt_N cktIdx_M free|restricted|occupied'
     cats = {}
     for ckt, state in re.findall(r"class='[^']*is_seat ckt_(\d+)([^']*)'", seats):
@@ -93,30 +169,24 @@ def hall_info(colosseum_id, url=None):
     return url, cats
 
 
-def safe_hall_info(cid, url=None, attempts=4):
+def safe_hall_info(theatre, cid, url=None, attempts=4):
     for attempt in range(attempts):
         try:
-            return hall_info(cid, url)
-        except Exception as ex:  # server.mdb.cz občas přestane odpovídat, zkusíme to znovu
+            return hall_info(theatre, cid, url)
+        except Exception as ex:  # server občas přestane odpovídat, zkusíme to znovu
             if attempt == attempts - 1:
-                print(f"  {cid}: {ex}", flush=True)
+                print(f"  {theatre} {cid}: {ex}", flush=True)
                 return url, None
             time.sleep(3 * (attempt + 1))
 
 
+# --- HTML ---
+
 WEEKDAYS = ["po", "út", "st", "čt", "pá", "so", "ne"]
 MONTHS = ["leden", "únor", "březen", "duben", "květen", "červen",
           "červenec", "srpen", "září", "říjen", "listopad", "prosinec"]
-
-
-GENRES = {"Drama": "Činohra", "Musical": "Muzikál", "Concert": "Koncert", "Opera": "Opera",
-          "Ballet": "Balet", "Dance": "Tanec", "Show": "Show"}
+GENRE_ORDER = ["Činohra", "Muzikál", "Opera", "Balet", "Koncert"]
 DARK = "--bg:#111418; --card:#1a1e24; --fg:#e8eaed; --muted:#9aa3ad; --line:#2b313a; --accent:#ff5c8a; --ok:#86efac; --ok-bg:#14532d; --low:#fde047; --low-bg:#713f12; --zero:#fca5a5; --zero-bg:#7f1d1d;"
-
-
-def genre_label(e):
-    g = e["production"].get("genre") or ""
-    return GENRES.get(g, g)
 
 
 def month_label(ym):
@@ -141,45 +211,61 @@ def price_label(info):
     return f'<details><summary>{summary}</summary><div class="cats">{rows}<div class="muted">volná / celkem</div></div></details>'
 
 
+def free_count(e, info):
+    """MDB: číslo z API webu. NdB: součet volných míst z mapy sálu."""
+    if e["theatre"] == "mdb" or e["cap"] is not None:
+        return e["cap"]
+    cats = (info or {}).get("cats")
+    return sum(f for _, f in cats.values()) if cats else None
+
+
+def tabs(group, items, all_label):
+    buttons = "".join(f'<button data-v="{html.escape(v)}">{html.escape(label)}</button>' for v, label in items)
+    return f'<div class="tabs small" data-filter="{group}"><button data-v="" class="active">{all_label}</button>{buttons}</div>'
+
 
 def render(events, urls, seats, months):
     generated = datetime.now().strftime("%d. %m. %Y %H:%M")
-    stages = sorted({(e.get("stage") or {}).get("title") or "" for e in events} - {""})
-    genres = sorted({genre_label(e) for e in events} - {""}, key=lambda g: list(GENRES.values()).index(g) if g in GENRES.values() else 99)
+    theatres = [(k, t["short"]) for k, t in THEATRES.items() if any(e["theatre"] == k for e in events)]
+    stages = sorted({e["stage"] for e in events} - {""})
+    genres = sorted({e["genre"] for e in events} - {""},
+                    key=lambda g: (GENRE_ORDER.index(g) if g in GENRE_ORDER else 99, g))
     trs = []
     for e in events:
         dt = datetime.fromisoformat(e["start"])
-        title = html.escape(e["production"]["title"])
-        prod_url = WEB + e["production"]["url"]
-        stage = html.escape((e.get("stage") or {}).get("title") or "")
-        sale = e.get("saleStartAt")
-        sale_txt = datetime.fromisoformat(sale).strftime("%d. %m. %H:%M") if sale else "–"
-        cid = e.get("colosseumId")
-        url = urls.get(str(cid)) if cid else None
-        if not cid or e.get("canceled"):
-            btn = '<span class="muted">bez prodeje</span>'
+        t = THEATRES[e["theatre"]]
+        title = html.escape(e["title"])
+        stage = html.escape(e["stage"])
+        sale_txt = datetime.fromisoformat(e["sale"]).strftime("%d. %m. %H:%M") if e["sale"] else "–"
+        info = seats.get(key(e)) if e["cid"] else None
+        url = urls.get(key(e)) if e["cid"] else None
+        if e["note"]:
+            btn = f'<span class="muted">{e["note"]}</span>'
         elif not url:
             btn = '<span class="muted">sál nenačten</span>'
         else:
-            btn = f'<button onclick="openHall({cid}, {html.escape(json.dumps(url))})">Sál</button>'
-        cap = e.get("availableCapacity")  # počet volných míst, jak ho uvádí web mdb.cz
+            btn = f'<button onclick="openHall(\'{e["theatre"]}\', {e["cid"]}, {html.escape(json.dumps(url))})">Sál</button>'
+        cap = free_count(e, info)
         if cap is None:
             free_html = '<span class="muted">–</span>'
         else:
             free_cls = "zero" if cap == 0 else ("low" if cap < 20 else "ok")
             free_html = f'<span class="free {free_cls}">{cap}</span>'
-        trs.append(f"""<tr data-title="{title.lower()}" data-month="{dt:%Y-%m}" data-genre="{html.escape(genre_label(e))}" data-stage="{stage}" data-start="{e['start']}" data-free="{cap if cap is not None else -1}">
+        meta = " · ".join(x for x in (t["short"], html.escape(e["genre"]), stage) if x)
+        trs.append(f"""<tr data-title="{title.lower()}" data-month="{dt:%Y-%m}" data-theatre="{e['theatre']}" data-genre="{html.escape(e['genre'])}" data-stage="{stage}" data-start="{e['start']}" data-free="{cap if cap is not None else -1}">
   <td class="date"><b>{dt.day}. {dt.month}.</b> {WEEKDAYS[dt.weekday()]}<br><span class="muted">{dt:%H:%M}</span></td>
-  <td><a href="{prod_url}" target="_blank" rel="noopener">{title}</a><br><span class="muted">{" · ".join(x for x in (html.escape(genre_label(e)), stage) if x)}</span></td>
+  <td><a href="{html.escape(e['url'])}" target="_blank" rel="noopener">{title}</a><br><span class="muted">{meta}</span></td>
   <td class="num">{free_html}</td>
-  <td class="num">{price_label(seats.get(str(cid)))}</td>
+  <td class="num">{price_label(info)}</td>
   <td class="num">{sale_txt}</td>
   <td>{btn}</td>
 </tr>""")
 
+    config = {k: {"server": t["server"], "form": t["form"]} for k, t in THEATRES.items()}
+    links = " a ".join(f'<a href="{t["web"]}" target="_blank" rel="noopener">{t["short"]}</a>' for t in THEATRES.values())
     return f"""<!doctype html>
 <html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MDB předprodej</title>
+<title>Brněnská divadla – sály</title>
 <style>
 :root {{ --bg:#f6f7f9; --card:#fff; --fg:#1b1f24; --muted:#6b7280; --line:#e5e7eb; --accent:#b4003c;
         --ok:#166534; --ok-bg:#dcfce7; --low:#854d0e; --low-bg:#fef08a; --zero:#991b1b; --zero-bg:#fecaca; }}
@@ -214,12 +300,13 @@ details .cats {{ margin-top:4px; font-size:13px; line-height:1.5 }}
 .filters {{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; }}
 @media (max-width:560px) {{ th:nth-child(5), td:nth-child(5) {{ display:none }} th, td {{ padding:10px 8px }} }}
 </style></head><body><main>
-<div class="top"><h1>MDB – sály představení</h1><button id="theme" onclick="cycleTheme()"></button></div>
-<div class="muted">Seznam a volná místa k {generated} · neoficiální rozcestník, nákup probíhá přímo na <a href="{WEB}" target="_blank" rel="noopener">mdb.cz</a></div>
+<div class="top"><h1>Brněnská divadla – sály a volná místa</h1><button id="theme" onclick="cycleTheme()"></button></div>
+<div class="muted">Seznam a volná místa k {generated} · neoficiální rozcestník, nákup probíhá přímo na webu {links}</div>
 <div class="bar">
-  <div class="tabs" id="tabs">{"".join(f'<button data-month="{m}">{month_label(m)}</button>' for m in months)}<button data-month="all">Vše</button></div>
-  <div class="tabs small" id="genres"><button data-genre="" class="active">Všechny žánry</button>{"".join(f'<button data-genre="{html.escape(g)}">{html.escape(g)}</button>' for g in genres)}</div>
-  <div class="tabs small" id="stages"><button data-stage="" class="active">Všechny scény</button>{"".join(f'<button data-stage="{html.escape(st)}">{html.escape(st)}</button>' for st in stages)}</div>
+  <div class="tabs" id="months">{"".join(f'<button data-month="{m}">{month_label(m)}</button>' for m in months)}<button data-month="all">Vše</button></div>
+  {tabs("theatre", theatres, "Všechna divadla")}
+  {tabs("genre", [(g, g) for g in genres], "Všechny žánry")}
+  {tabs("stage", [(s, s) for s in stages], "Všechny scény")}
   <div class="filters">
     <input type="search" id="q" placeholder="Hledat představení…" oninput="filter()">
     <label><input type="checkbox" id="onlyFree" onchange="filter()"> jen s volnými místy</label>
@@ -230,23 +317,26 @@ details .cats {{ margin-top:4px; font-size:13px; line-height:1.5 }}
 {chr(10).join(trs)}
 </tbody></table>
 <div class="empty" id="empty" hidden>Žádná představení.</div>
-<p class="note">„Sál“ otevře novou záložku, v ní nejdřív otevře představení na server.mdb.cz a hned potom přejde na aktuální mapu sálu.
+<p class="note">„Sál“ otevře novou záložku, v ní nejdřív otevře představení v prodejním systému divadla a hned potom přejde na aktuální mapu sálu.
 Pokud zůstane na hlášce „Na tuto akci není možné provádět rezervace“, klikni na „Sál“ znovu.
 Před začátkem předprodeje jsou místa vidět, ale nejdou vybrat.
-„Volno“ je počet volných míst, jak ho uvádí web mdb.cz, aktualizovaný zhruba každou hodinu; přesný stav ukáže mapa sálu.</p>
+„Volno“ u MDB je počet volných míst, jak ho uvádí web mdb.cz (obnovuje se každou hodinu), u NdB součet volných míst z mapy sálu (obnovuje se zhruba každých 6 hodin).
+Ceny jsou základní ceny cenových kategorií, ve kterých jsou ještě volná místa; po rozkliknutí rozpad po kategoriích.</p>
 </main>
 <script>
-function openHall(id, url) {{
-  const name = 'mdb_' + id + '_' + Date.now();
+const THEATRES = {json.dumps(config)};
+function openHall(theatre, id, url) {{
+  const t = THEATRES[theatre];
+  const name = 'hall_' + id + '_' + Date.now();
   const w = window.open('about:blank', name);
   const f = document.createElement('form');
-  f.method = 'POST'; f.action = '{SERVER}/hall'; f.target = name;
-  for (const [k, v] of Object.entries({{mrsid: 1, eventid: id, language: 'cs', currency: 'CZK'}})) {{
+  f.method = 'POST'; f.action = t.server + '/hall'; f.target = name;
+  for (const [k, v] of Object.entries({{...t.form, eventid: id}})) {{
     const i = document.createElement('input'); i.type = 'hidden'; i.name = k; i.value = v; f.appendChild(i);
   }}
   document.body.appendChild(f); f.submit(); f.remove();
   if (!w) return;
-  // Dokud je záložka about:blank, vidíme do ní. Jakmile se v ní načte server.mdb.cz (po všech
+  // Dokud je záložka about:blank, vidíme do ní. Jakmile se v ní načte prodejní systém (po všech
   // přesměrováních, takže cookie session už je nastavená), přístup vyhodí výjimku – pak přepneme na sál.
   const started = Date.now();
   const timer = setInterval(() => {{
@@ -259,37 +349,36 @@ function openHall(id, url) {{
   }}, 50);
 }}
 const fold = t => t.normalize('NFD').replace(/\\p{{Diacritic}}/gu, '').toLowerCase();  // bez diakritiky
-const tabs = [...document.querySelectorAll('#tabs button')];
+const monthTabs = [...document.querySelectorAll('#months button')];
 let month = '';
 function setMonth(m) {{
-  if (!tabs.some(b => b.dataset.month === m)) m = tabs[tabs.length - 2].dataset.month;  // výchozí: nejnovější měsíc
+  if (!monthTabs.some(b => b.dataset.month === m)) m = monthTabs[0].dataset.month;  // výchozí: aktuální měsíc
   month = m;
-  for (const b of tabs) b.classList.toggle('active', b.dataset.month === m);
+  for (const b of monthTabs) b.classList.toggle('active', b.dataset.month === m);
   history.replaceState(null, '', '#' + m);
   filter();
 }}
 function filter() {{
   const q = fold(document.getElementById('q').value.trim());
   const onlyFree = document.getElementById('onlyFree').checked;
-  const genre = document.querySelector('#genres button.active').dataset.genre;
-  const stage = document.querySelector('#stages button.active').dataset.stage;
+  const sel = {{}};
+  for (const g of document.querySelectorAll('[data-filter]')) sel[g.dataset.filter] = g.querySelector('.active').dataset.v;
   const now = new Date();
   let shown = 0;
   for (const tr of document.querySelectorAll('tbody tr')) {{
     const show = fold(tr.dataset.title).includes(q)
       && (month === 'all' || tr.dataset.month === month)
       && (!onlyFree || +tr.dataset.free > 0)
-      && (!genre || tr.dataset.genre === genre)
-      && (!stage || tr.dataset.stage === stage)
+      && Object.entries(sel).every(([k, v]) => !v || tr.dataset[k] === v)
       && new Date(tr.dataset.start) > now;  // proběhlá představení skrýt
     tr.style.display = show ? '' : 'none';
     shown += show;
   }}
   document.getElementById('empty').hidden = shown > 0;
 }}
-for (const b of tabs) b.onclick = () => setMonth(b.dataset.month);
-for (const id of ['genres', 'stages']) {{
-  const group = document.querySelectorAll('#' + id + ' button');
+for (const b of monthTabs) b.onclick = () => setMonth(b.dataset.month);
+for (const g of document.querySelectorAll('[data-filter]')) {{
+  const group = g.querySelectorAll('button');
   for (const b of group) b.onclick = () => {{
     for (const o of group) o.classList.toggle('active', o === b);
     filter();
@@ -315,33 +404,58 @@ setMonth(location.hash.slice(1));
 </script></body></html>"""
 
 
+# --- hlavní běh ---
+
+def todo_list(events, urls, seats):
+    """Představení, u kterých je potřeba načíst sál: nová, u MDB se změnou počtu volných míst podle API,
+    u NdB s mapou starší než NDB_REFRESH (nejstarší napřed, nejvýš NDB_REFRESH_PER_RUN)."""
+    now = datetime.now()
+    todo, stale = [], []
+    for e in events:
+        if not e["cid"] or e["note"]:
+            continue
+        k = key(e)
+        info = seats.get(k)
+        if k not in urls or not info:
+            todo.append(e)
+        elif e["theatre"] == "mdb":
+            if info.get("cap") != e["cap"]:
+                todo.append(e)
+        elif now - datetime.fromisoformat(info.get("ts", "2000-01-01T00:00:00")) > NDB_REFRESH:
+            stale.append(e)
+    stale.sort(key=lambda e: seats[key(e)].get("ts", ""))
+    return todo + stale[:NDB_REFRESH_PER_RUN]
+
+
 def main():
     events = []
+    for name, fetch in (("MDB", fetch_mdb), ("NdB", fetch_ndb)):
+        try:
+            found = fetch()
+            print(f"{name}: {len(found)} představení", flush=True)
+            events += found
+        except Exception as ex:  # rozbitý web jednoho divadla nemá shodit celou stránku
+            print(f"{name}: nepodařilo se načíst program ({ex})", flush=True)
+    today = date.today().isoformat()
+    events = [e for e in events if e["start"][:10] >= today]
     if sys.argv[1:]:
-        for ym in sys.argv[1:]:
-            events += fetch_events(*month_range(ym))
-    else:
-        events = fetch_events(date.today())
-    events.sort(key=lambda e: e["start"])
+        events = [e for e in events if e["start"][:7] in sys.argv[1:]]
+    events.sort(key=lambda e: (e["start"][:16], e["theatre"]))
     months = sorted({e["start"][:7] for e in events})
 
     urls = json.loads(CACHE.read_text(encoding="utf-8")) if CACHE.exists() else {}
     seats = json.loads(SEATS.read_text(encoding="utf-8")) if SEATS.exists() else {}
-    caps = {str(e["colosseumId"]): e.get("availableCapacity")
-            for e in events if e.get("colosseumId") and not e.get("canceled")}
-    # Mapu sálu stahujeme jen tam, kde ještě není, nebo se od minula změnil počet volných míst podle API.
-    todo = [cid for cid, cap in caps.items() if cid not in urls or cid not in seats or seats[cid].get("cap") != cap]
-    if os.environ.get("MDB_CACHE_ONLY"):  # rychlé nasazení jen z uložených dat, bez dotazů na server.mdb.cz
-        todo = []
-    print(f"Představení: {len(events)}, načítám sály: {len(todo)}", flush=True)
-    # Po jednom a s pauzou – při souběžných dotazech server.mdb.cz přestane odpovídat.
-    for cid in todo:
-        url, cats = safe_hall_info(cid, urls.get(cid))
+    todo = [] if os.environ.get("MDB_CACHE_ONLY") else todo_list(events, urls, seats)  # CACHE_ONLY: bez dotazů na prodejní systémy
+    print(f"Načítám sály: {len(todo)}", flush=True)
+    # Po jednom a s pauzou – při souběžných dotazech prodejní systém přestane odpovídat.
+    for e in todo:
+        k = key(e)
+        url, cats = safe_hall_info(e["theatre"], e["cid"], urls.get(k))
         if url:
-            urls[cid] = url
+            urls[k] = url
             CACHE.write_text(json.dumps(urls, indent=1), encoding="utf-8")
         if cats is not None:
-            seats[cid] = {"cap": caps[cid], "cats": cats}
+            seats[k] = {"cap": e["cap"], "cats": cats, "ts": datetime.now().isoformat(timespec="seconds")}
             SEATS.write_text(json.dumps(seats, indent=1), encoding="utf-8")
         time.sleep(1)
 
