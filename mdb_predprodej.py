@@ -242,9 +242,9 @@ def render(events, urls, seats, months):
         if e["note"]:
             btn = f'<span class="muted">{e["note"]}</span>'
         elif not url:
-            btn = '<span class="muted">sál nenačten</span>'
+            btn = '<span class="muted">odkaz zatím nenačten</span>'
         else:
-            btn = f'<button onclick="openHall(\'{e["theatre"]}\', {e["cid"]}, {html.escape(json.dumps(url))})">Sál</button>'
+            btn = f'<button onclick="openHall(\'{e["theatre"]}\', {e["cid"]}, {html.escape(json.dumps(url))})">Vstupenky</button>'
         cap = free_count(e, info)
         if cap is None:
             free_html = '<span class="muted">–</span>'
@@ -319,8 +319,8 @@ details .cats {{ margin-top:4px; font-size:13px; line-height:1.5 }}
 {chr(10).join(trs)}
 </tbody></table>
 <div class="empty" id="empty" hidden>Žádná představení.</div>
-<p class="note">„Sál“ otevře novou záložku, v ní nejdřív otevře představení v prodejním systému divadla a hned potom přejde na aktuální mapu sálu.
-Pokud zůstane na hlášce „Na tuto akci není možné provádět rezervace“, klikni na „Sál“ znovu.
+<p class="note">„Vstupenky“ otevře novou záložku s aktuální mapou sálu v prodejním systému divadla (nejdřív v ní na okamžik otevře představení, pak hned přejde na sál).
+Pokud zůstane na hlášce „Na tuto akci není možné provádět rezervace“, klikni na „Vstupenky“ znovu.
 Před začátkem předprodeje jsou místa vidět, ale nejdou vybrat.
 „Volno“ u MDB je počet volných míst, jak ho uvádí web mdb.cz (obnovuje se každou hodinu), u NdB součet volných míst z mapy sálu (obnovuje se zhruba každých 6 hodin).
 Ceny jsou základní ceny cenových kategorií, ve kterých jsou ještě volná místa; po rozkliknutí rozpad po kategoriích.</p>

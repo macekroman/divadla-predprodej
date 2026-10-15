@@ -13,7 +13,7 @@ i u představení, jejichž předprodej ještě nezačal. Nákup probíhá výhr
 - Tlačítko „Koupit vstupenky“ na webu posílá POST na `https://server.mdb.cz/hall` (`mrsid=1`, `eventid`).
   Session si pak pamatuje představení a `/mdb/standard/Hall/PrepareDetail` vrátí adresu sálu
   `Hall/Index/<id>/<token>`. Token je pro představení stálý, proto se ukládá do `hall_urls.json`.
-- Tlačítko „Sál“ na stránce v prohlížeči návštěvníka odešle stejný POST do nové záložky
+- Tlačítko „Vstupenky“ na stránce v prohlížeči návštěvníka odešle stejný POST do nové záložky
   a po 2,5 s ji přepne na adresu sálu.
 
 ## Spuštění lokálně
