@@ -5,6 +5,11 @@ on:
     # 5:15 a 17:15 UTC (ráno před otevřením předprodeje v 8:00 a večer)
     - cron: "15 5,17 * * *"
   workflow_dispatch:
+    inputs:
+      cache_only:
+        description: "Jen uložené adresy sálů (rychlé, bez dotazů na server.mdb.cz)"
+        type: boolean
+        default: false
   push:
     branches: [main]
 
@@ -32,6 +37,7 @@ jobs:
         run: python mdb_predprodej.py
         env:
           MDB_OUT: site/index.html
+          MDB_CACHE_ONLY: ${{ (github.event_name == 'push' || inputs.cache_only) && '1' || '' }}
 
       - name: Uložit nově zjištěné adresy sálů
         run: |

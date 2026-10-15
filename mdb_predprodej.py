@@ -168,6 +168,8 @@ def main():
 
     urls = json.loads(CACHE.read_text(encoding="utf-8")) if CACHE.exists() else {}
     missing = [str(e["colosseumId"]) for e in events if e.get("colosseumId") and str(e["colosseumId"]) not in urls]
+    if os.environ.get("MDB_CACHE_ONLY"):  # rychlé nasazení jen z uložených adres, bez dotazů na server.mdb.cz
+        missing = []
     print(f"Představení: {len(events)}, dohledávám sály: {len(missing)}", flush=True)
     # Po jednom a s pauzou – při souběžných dotazech server.mdb.cz přestane odpovídat.
     for cid in missing:
