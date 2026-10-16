@@ -28,6 +28,7 @@ UA = "Mozilla/5.0 (divadla-predprodej)"
 OUT = Path(os.environ.get("OUT") or Path(__file__).with_name("divadla_predprodej.html"))
 CACHE = Path(__file__).with_name("hall_urls.json")
 SEATS = Path(__file__).with_name("seats.json")
+PROGRAMS = Path(__file__).with_name("programs.json")  # poslední úspěšně načtený program každého divadla
 
 # Pole "form" odpovídají formuláři, který posílá tlačítko „Koupit vstupenky“ na webu divadla.
 THEATRES = {
@@ -238,8 +239,11 @@ def select(group, all_label, options, default=""):
     return f'<select data-filter="{group}" onchange="filter()"><option value="">{all_label}</option>{body}</select>'
 
 
-def render(events, urls, seats, months):
+def render(events, urls, seats, months, stale=None):
+    """stale: {divadlo: kdy byl program naposledy načten} pro divadla, jejichž web teď nebyl dostupný."""
     generated = datetime.now().strftime("%d. %m. %Y %H:%M")
+    stale_note = "".join(f' · program {THEATRES[k]["short"]} z {datetime.fromisoformat(ts):%d. %m. %H:%M} (web divadla teď nedostupný)'
+                         for k, ts in (stale or {}).items())
     theatres = [(k, t["name"]) for k, t in THEATRES.items() if any(e["theatre"] == k for e in events)]
     # Scény seskupené podle divadla; hodnota nese i divadlo („mdb|Hudební scéna“), aby se nepletly.
     stages = [(name, [(f"{k}|{st}", st) for st in sorted({e["stage"] for e in events if e["theatre"] == k} - {""})], k)
@@ -347,7 +351,7 @@ details .cats {{ margin-top:4px; font-size:13px; line-height:1.5 }}
 }}
 </style></head><body><main>
 <div class="top"><h1>Brněnská divadla – sály a volná místa</h1><button id="theme" onclick="cycleTheme()"></button></div>
-<div class="muted">Seznam a volná místa k {generated} · neoficiální rozcestník, nákup probíhá přímo na webu {links}</div>
+<div class="muted">Seznam a volná místa k {generated}{stale_note} · neoficiální rozcestník, nákup probíhá přímo na webu {links}</div>
 <div class="bar">
   <div class="tabs" id="months">{"".join(month_button(m) for m in months)}<button data-month="all">Vše</button></div>
   <div class="selects">
@@ -479,14 +483,23 @@ def todo_list(events, urls, seats):
 
 
 def main():
-    events = []
-    for name, fetch in (("MDB", fetch_mdb), ("NdB", fetch_ndb)):
+    events, stale = [], {}
+    programs = json.loads(PROGRAMS.read_text(encoding="utf-8")) if PROGRAMS.exists() else {}
+    for theatre, fetch in (("mdb", fetch_mdb), ("ndb", fetch_ndb)):
+        name = THEATRES[theatre]["short"]
         try:
             found = fetch()
             print(f"{name}: {len(found)} představení", flush=True)
-            events += found
-        except Exception as ex:  # rozbitý web jednoho divadla nemá shodit celou stránku
-            print(f"{name}: nepodařilo se načíst program ({ex})", flush=True)
+            programs[theatre] = {"ts": datetime.now().isoformat(timespec="seconds"), "events": found}
+        except Exception as ex:  # nedostupný web jednoho divadla nemá shodit celou stránku
+            saved = programs.get(theatre)
+            print(f"{name}: nepodařilo se načíst program ({ex}), "
+                  + (f"použije se uložený z {saved['ts']}" if saved else "uložený není"), flush=True)
+            if not saved:
+                continue
+            found, stale[theatre] = saved["events"], saved["ts"]
+        events += found
+    PROGRAMS.write_text(json.dumps(programs, ensure_ascii=False, indent=1), encoding="utf-8")
     today = date.today().isoformat()
     events = [e for e in events if e["start"][:10] >= today]
     if sys.argv[1:]:
@@ -511,7 +524,7 @@ def main():
         time.sleep(1)
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(render(events, urls, seats, months), encoding="utf-8")
+    OUT.write_text(render(events, urls, seats, months, stale), encoding="utf-8")
     print(f"Hotovo: {OUT}")
 
 
