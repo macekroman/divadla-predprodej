@@ -57,7 +57,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
+      # Nejnovější main, ne commit, který běh spustil – jinak by chyběla data uložená předchozím během.
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - uses: actions/setup-python@v5
         with:
@@ -88,7 +91,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898333+github-actions[bot]@users.noreply.github.com"
           for f in hall_urls.json seats.json programs.json; do [ -f "$f" ] && git add "$f"; done
-          git diff --cached --quiet || (git commit -m "Aktualizace adres sálů a volných míst" && git pull --rebase && git push)
+          git diff --cached --quiet || (git commit -m "Aktualizace adres sálů a volných míst" && git pull --rebase -X theirs && git push)  # při střetu dat vyhrává tahle (čerstvější) verze
 
       - uses: actions/upload-pages-artifact@v3
         with:
