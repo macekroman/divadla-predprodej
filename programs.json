@@ -1,19 +1,7 @@
 {
  "mdb": {
-  "ts": "2026-10-16T21:56:46",
+  "ts": "2026-10-17T00:49:39",
   "events": [
-   {
-    "theatre": "mdb",
-    "cid": "9637",
-    "start": "2026-10-16T19:00:00+02:00",
-    "title": "Letnice",
-    "url": "https://www.mdb.cz/cs/inscenace/letnice",
-    "stage": "Činoherní scéna",
-    "genre": "Činohra",
-    "sale": "2026-06-15T08:00:00+02:00",
-    "cap": 5,
-    "note": null
-   },
    {
     "theatre": "mdb",
     "cid": "9632",
@@ -191,7 +179,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-06-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 1,
     "note": null
    },
    {
@@ -215,7 +203,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-06-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 2,
     "note": null
    },
    {
@@ -227,7 +215,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-06-15T08:00:00+02:00",
-    "cap": 2,
+    "cap": 0,
     "note": null
    },
    {
@@ -239,7 +227,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-06-15T08:00:00+02:00",
-    "cap": 46,
+    "cap": 44,
     "note": null
    },
    {
@@ -263,7 +251,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-06-15T08:00:00+02:00",
-    "cap": 4,
+    "cap": 0,
     "note": null
    },
    {
@@ -280,18 +268,6 @@
    },
    {
     "theatre": "mdb",
-    "cid": "9863",
-    "start": "2026-10-31T19:00:00+01:00",
-    "title": "Letnice",
-    "url": "https://www.mdb.cz/cs/inscenace/letnice",
-    "stage": "Činoherní scéna",
-    "genre": "Činohra",
-    "sale": "2026-06-15T08:00:00+02:00",
-    "cap": 1,
-    "note": null
-   },
-   {
-    "theatre": "mdb",
     "cid": "9716",
     "start": "2026-10-31T19:00:00+01:00",
     "title": "Carmen, příběh z New Yorku",
@@ -304,6 +280,18 @@
    },
    {
     "theatre": "mdb",
+    "cid": "9863",
+    "start": "2026-10-31T19:00:00+01:00",
+    "title": "Letnice",
+    "url": "https://www.mdb.cz/cs/inscenace/letnice",
+    "stage": "Činoherní scéna",
+    "genre": "Činohra",
+    "sale": "2026-06-15T08:00:00+02:00",
+    "cap": 1,
+    "note": null
+   },
+   {
+    "theatre": "mdb",
     "cid": "9886",
     "start": "2026-11-01T14:00:00+01:00",
     "title": "Carmen, příběh z New Yorku",
@@ -311,7 +299,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 2,
     "note": null
    },
    {
@@ -335,7 +323,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 6,
     "note": null
    },
    {
@@ -491,7 +479,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 9,
+    "cap": 14,
     "note": null
    },
    {
@@ -527,7 +515,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 2,
+    "cap": 0,
     "note": null
    },
    {
@@ -551,7 +539,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 4,
     "note": null
    },
    {
@@ -563,7 +551,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 204,
+    "cap": 206,
     "note": null
    },
    {
@@ -575,7 +563,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 166,
+    "cap": 167,
     "note": null
    },
    {
@@ -587,7 +575,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 6,
     "note": null
    },
    {
@@ -599,7 +587,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 5,
     "note": null
    },
    {
@@ -623,7 +611,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 3,
     "note": null
    },
    {
@@ -659,7 +647,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 3,
     "note": null
    },
    {
@@ -671,7 +659,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 3,
     "note": null
    },
    {
@@ -683,7 +671,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 6,
     "note": null
    },
    {
@@ -707,7 +695,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 3,
     "note": null
    },
    {
@@ -899,7 +887,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 4,
     "note": null
    },
    {
@@ -976,24 +964,24 @@
    },
    {
     "theatre": "mdb",
-    "cid": "9901",
-    "start": "2026-11-27T19:00:00+01:00",
-    "title": "Les Misérables (Bídníci)",
-    "url": "https://www.mdb.cz/cs/inscenace/les-miserables-bidnici-2",
-    "stage": "Hudební scéna",
-    "genre": "Muzikál",
-    "sale": null,
-    "cap": 0,
-    "note": null
-   },
-   {
-    "theatre": "mdb",
     "cid": "9884",
     "start": "2026-11-27T19:00:00+01:00",
     "title": "Ti druzí",
     "url": "https://www.mdb.cz/cs/inscenace/ti-druzi",
     "stage": "Činoherní scéna",
     "genre": "Činohra",
+    "sale": null,
+    "cap": 0,
+    "note": null
+   },
+   {
+    "theatre": "mdb",
+    "cid": "9901",
+    "start": "2026-11-27T19:00:00+01:00",
+    "title": "Les Misérables (Bídníci)",
+    "url": "https://www.mdb.cz/cs/inscenace/les-miserables-bidnici-2",
+    "stage": "Hudební scéna",
+    "genre": "Muzikál",
     "sale": null,
     "cap": 0,
     "note": null
@@ -1108,18 +1096,6 @@
    },
    {
     "theatre": "mdb",
-    "cid": "9966",
-    "start": "2026-12-02T18:00:00+01:00",
-    "title": "Les Misérables (Bídníci)",
-    "url": "https://www.mdb.cz/cs/inscenace/les-miserables-bidnici-2",
-    "stage": "Hudební scéna",
-    "genre": "Muzikál",
-    "sale": null,
-    "cap": 0,
-    "note": null
-   },
-   {
-    "theatre": "mdb",
     "cid": null,
     "start": "2026-12-02T18:00:00+01:00",
     "title": "Lazebník sevillský",
@@ -1129,6 +1105,18 @@
     "sale": null,
     "cap": null,
     "note": "bez prodeje"
+   },
+   {
+    "theatre": "mdb",
+    "cid": "9966",
+    "start": "2026-12-02T18:00:00+01:00",
+    "title": "Les Misérables (Bídníci)",
+    "url": "https://www.mdb.cz/cs/inscenace/les-miserables-bidnici-2",
+    "stage": "Hudební scéna",
+    "genre": "Muzikál",
+    "sale": null,
+    "cap": 0,
+    "note": null
    },
    {
     "theatre": "mdb",
@@ -1379,7 +1367,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 272,
+    "cap": 270,
     "note": null
    },
    {
@@ -1391,7 +1379,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 51,
+    "cap": 48,
     "note": null
    },
    {
@@ -1403,7 +1391,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 318,
+    "cap": 308,
     "note": null
    },
    {
@@ -1588,18 +1576,6 @@
    },
    {
     "theatre": "mdb",
-    "cid": "9977",
-    "start": "2026-12-27T18:00:00+01:00",
-    "title": "Pohádka o živé vodě",
-    "url": "https://www.mdb.cz/cs/inscenace/pohadka-o-zive-vode",
-    "stage": "Hudební scéna",
-    "genre": "Muzikál",
-    "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 337,
-    "note": null
-   },
-   {
-    "theatre": "mdb",
     "cid": "9959",
     "start": "2026-12-27T18:00:00+01:00",
     "title": "Ti druzí",
@@ -1608,6 +1584,18 @@
     "genre": "Činohra",
     "sale": "2026-10-15T08:00:00+02:00",
     "cap": 182,
+    "note": null
+   },
+   {
+    "theatre": "mdb",
+    "cid": "9977",
+    "start": "2026-12-27T18:00:00+01:00",
+    "title": "Pohádka o živé vodě",
+    "url": "https://www.mdb.cz/cs/inscenace/pohadka-o-zive-vode",
+    "stage": "Hudební scéna",
+    "genre": "Muzikál",
+    "sale": "2026-10-15T08:00:00+02:00",
+    "cap": 337,
     "note": null
    },
    {
@@ -1703,7 +1691,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 126,
+    "cap": 124,
     "note": null
    },
    {
@@ -1721,7 +1709,7 @@
   ]
  },
  "ndb": {
-  "ts": "2026-10-16T21:56:46",
+  "ts": "2026-10-17T00:49:39",
   "events": [
    {
     "theatre": "ndb",
