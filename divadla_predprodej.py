@@ -10,6 +10,11 @@ Použití:
 
 Výstup: divadla_predprodej.html vedle skriptu (jinou cestu jde zadat proměnnou OUT).
 S proměnnou CACHE_ONLY=1 se nic nenačítá z prodejních systémů, použijí se jen uložená data.
+
+    python divadla_predprodej.py --ndb-program SOUBOR   # jen stáhne program NdB do souboru
+S proměnnou NDB_PROGRAM=SOUBOR se program NdB převezme ze souboru (když neexistuje, bere se jako
+nedostupný). Web NdB totiž část serverů GitHub Actions blokuje, takže ho workflow stahuje
+na několika serverech souběžně a hlavní běh použije první úspěšný výsledek.
 Adresy sálů (token je pro představení stálý) jsou v hall_urls.json, volná místa podle cen v seats.json.
 """
 import html
@@ -482,10 +487,20 @@ def todo_list(events, urls, seats):
     return todo + stale[:NDB_REFRESH_PER_RUN]
 
 
+def fetch_ndb_or_file():
+    """Program NdB ze souboru NDB_PROGRAM (připravený souběžnými úlohami ve workflow), jinak z webu."""
+    path = os.environ.get("NDB_PROGRAM")
+    if path is None:
+        return fetch_ndb()
+    if not Path(path).is_file():
+        raise RuntimeError("žádná z úloh program NdB nestáhla (web NdB blokuje část serverů GitHubu)")
+    return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
 def main():
     events, stale = [], {}
     programs = json.loads(PROGRAMS.read_text(encoding="utf-8")) if PROGRAMS.exists() else {}
-    for theatre, fetch in (("mdb", fetch_mdb), ("ndb", fetch_ndb)):
+    for theatre, fetch in (("mdb", fetch_mdb), ("ndb", fetch_ndb_or_file)):
         name = THEATRES[theatre]["short"]
         try:
             found = fetch()
@@ -529,4 +544,9 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if sys.argv[1:2] == ["--ndb-program"]:
+        found = fetch_ndb()
+        Path(sys.argv[2]).write_text(json.dumps(found, ensure_ascii=False), encoding="utf-8")
+        print(f"NdB: {len(found)} představení", flush=True)
+    else:
+        main()

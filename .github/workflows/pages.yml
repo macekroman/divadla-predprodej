@@ -23,7 +23,37 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Web NdB blokuje část adres GitHub Actions (zhruba polovinu serverů), proto program NdB
+  # stahujeme na 4 serverech souběžně; hlavní úloha použije první úspěšný výsledek.
+  ndb-program:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        n: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Stáhnout program NdB
+        id: fetch
+        continue-on-error: true  # zablokovaný server nemá shodit celý běh
+        run: python divadla_predprodej.py --ndb-program ndb_program.json
+
+      - if: steps.fetch.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ndb-program-${{ matrix.n }}
+          path: ndb_program.json
+          retention-days: 1
+
   build:
+    needs: ndb-program
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -32,6 +62,19 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: Převzít program NdB
+        uses: actions/download-artifact@v4
+        continue-on-error: true  # když neuspěla žádná úloha, žádný artefakt není
+        with:
+          pattern: ndb-program-*
+          path: ndb
+
+      - name: Vybrat první úspěšně stažený program NdB
+        run: |
+          f=$(ls ndb/*/ndb_program.json 2>/dev/null | head -1)
+          echo "Program NdB: ${f:-nestažen, použije se uložený}"
+          echo "NDB_PROGRAM=${f:-ndb/chybi.json}" >> "$GITHUB_ENV"
 
       - name: Vygenerovat stránku
         run: python divadla_predprodej.py
