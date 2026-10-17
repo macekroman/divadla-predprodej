@@ -1,6 +1,6 @@
 {
  "mdb": {
-  "ts": "2026-10-17T13:35:37",
+  "ts": "2026-10-17T17:30:21",
   "events": [
    {
     "theatre": "mdb",
@@ -107,7 +107,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-10-14T10:00:00+02:00",
-    "cap": 12,
+    "cap": 10,
     "note": null
    },
    {
@@ -131,7 +131,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-06-15T08:00:00+02:00",
-    "cap": 31,
+    "cap": 29,
     "note": null
    },
    {
@@ -479,7 +479,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 12,
+    "cap": 8,
     "note": null
    },
    {
@@ -587,7 +587,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 5,
+    "cap": 3,
     "note": null
    },
    {
@@ -887,7 +887,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 2,
+    "cap": 0,
     "note": null
    },
    {
@@ -1235,7 +1235,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 23,
+    "cap": 24,
     "note": null
    },
    {
@@ -1283,7 +1283,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 2,
+    "cap": 1,
     "note": null
    },
    {
@@ -1343,7 +1343,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 268,
+    "cap": 266,
     "note": null
    },
    {
@@ -1367,7 +1367,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 266,
+    "cap": 264,
     "note": null
    },
    {
@@ -1451,7 +1451,7 @@
     "stage": "Hudební scéna",
     "genre": "Koncert",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 43,
+    "cap": 39,
     "note": null
    },
    {
@@ -1523,7 +1523,7 @@
     "stage": "Hudební scéna",
     "genre": "Koncert",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 163,
+    "cap": 158,
     "note": null
    },
    {
@@ -1547,7 +1547,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 61,
+    "cap": 59,
     "note": null
    },
    {
@@ -1631,7 +1631,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 188,
+    "cap": 186,
     "note": null
    },
    {
@@ -1643,7 +1643,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 133,
+    "cap": 130,
     "note": null
    },
    {
@@ -1703,13 +1703,13 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 161,
+    "cap": 159,
     "note": null
    }
   ]
  },
  "ndb": {
-  "ts": "2026-10-17T13:35:37",
+  "ts": "2026-10-17T17:30:21",
   "events": [
    {
     "theatre": "ndb",
@@ -2157,15 +2157,15 @@
    },
    {
     "theatre": "ndb",
-    "cid": "3811514",
+    "cid": null,
     "start": "2026-11-03T19:00:00",
     "title": "Michal Pavlíček a trio",
     "url": "https://www.ndbrno.cz/program/michal-pavlicek-a-trio/",
     "stage": "Mahenovo divadlo",
     "genre": "",
     "sale": null,
-    "cap": null,
-    "note": null
+    "cap": 0,
+    "note": "vyprodáno"
    },
    {
     "theatre": "ndb",
