@@ -1,6 +1,6 @@
 {
  "mdb": {
-  "ts": "2026-10-17T00:49:39",
+  "ts": "2026-10-17T03:17:58",
   "events": [
    {
     "theatre": "mdb",
@@ -539,7 +539,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 4,
+    "cap": 0,
     "note": null
    },
    {
@@ -1709,44 +1709,8 @@
   ]
  },
  "ndb": {
-  "ts": "2026-10-17T00:49:39",
+  "ts": "2026-10-17T03:17:58",
   "events": [
-   {
-    "theatre": "ndb",
-    "cid": "3896148",
-    "start": "2026-10-18T19:00:00",
-    "title": "Corinne Winters a David Mareček",
-    "url": "https://www.ndbrno.cz/program/corinne-winters-a-david-marecek/",
-    "stage": "Mahenovo divadlo",
-    "genre": "Opera",
-    "sale": null,
-    "cap": null,
-    "note": null
-   },
-   {
-    "theatre": "ndb",
-    "cid": null,
-    "start": "2026-10-18T15:00:00",
-    "title": "Dětský sbor Brno",
-    "url": "https://www.ndbrno.cz/program/detsky-sbor-brno/",
-    "stage": "Divadlo Reduta",
-    "genre": "Opera",
-    "sale": null,
-    "cap": 0,
-    "note": "vyprodáno"
-   },
-   {
-    "theatre": "ndb",
-    "cid": "4455164",
-    "start": "2026-10-18T11:00:00",
-    "title": "Kdo to tu vřéská - program pro celou rodinu",
-    "url": "https://www.ndbrno.cz/program/kdo-to-tu-vreska/",
-    "stage": "Foyer Janáčkova divadla",
-    "genre": "Opera",
-    "sale": null,
-    "cap": null,
-    "note": null
-   },
    {
     "theatre": "ndb",
     "cid": "4255878",
@@ -2013,15 +1977,15 @@
    },
    {
     "theatre": "ndb",
-    "cid": "3895775",
+    "cid": null,
     "start": "2026-10-29T19:00:00",
     "title": "Ensemble Versus",
     "url": "https://www.ndbrno.cz/program/ensemble-versus-2/",
     "stage": "",
     "genre": "Opera",
     "sale": null,
-    "cap": null,
-    "note": null
+    "cap": 0,
+    "note": "vyprodáno"
    },
    {
     "theatre": "ndb",
