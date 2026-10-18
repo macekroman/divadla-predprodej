@@ -1,19 +1,7 @@
 {
  "mdb": {
-  "ts": "2026-10-17T23:26:54",
+  "ts": "2026-10-18T02:01:13",
   "events": [
-   {
-    "theatre": "mdb",
-    "cid": "9632",
-    "start": "2026-10-17T19:00:00+02:00",
-    "title": "Letnice",
-    "url": "https://www.mdb.cz/cs/inscenace/letnice",
-    "stage": "Činoherní scéna",
-    "genre": "Činohra",
-    "sale": "2026-06-15T08:00:00+02:00",
-    "cap": 0,
-    "note": null
-   },
    {
     "theatre": "mdb",
     "cid": "9913",
@@ -191,7 +179,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-06-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 1,
     "note": null
    },
    {
@@ -299,7 +287,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 1,
+    "cap": 3,
     "note": null
    },
    {
@@ -479,7 +467,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 8,
+    "cap": 2,
     "note": null
    },
    {
@@ -551,7 +539,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 201,
+    "cap": 199,
     "note": null
    },
    {
@@ -587,7 +575,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 3,
+    "cap": 6,
     "note": null
    },
    {
@@ -688,18 +676,6 @@
    },
    {
     "theatre": "mdb",
-    "cid": "9898",
-    "start": "2026-11-16T19:00:00+01:00",
-    "title": "Les Misérables (Bídníci)",
-    "url": "https://www.mdb.cz/cs/inscenace/les-miserables-bidnici-2",
-    "stage": "Hudební scéna",
-    "genre": "Muzikál",
-    "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 1,
-    "note": null
-   },
-   {
-    "theatre": "mdb",
     "cid": "9878",
     "start": "2026-11-16T19:00:00+01:00",
     "title": "Rozum a cit",
@@ -712,6 +688,18 @@
    },
    {
     "theatre": "mdb",
+    "cid": "9898",
+    "start": "2026-11-16T19:00:00+01:00",
+    "title": "Les Misérables (Bídníci)",
+    "url": "https://www.mdb.cz/cs/inscenace/les-miserables-bidnici-2",
+    "stage": "Hudební scéna",
+    "genre": "Muzikál",
+    "sale": "2026-09-15T08:00:00+02:00",
+    "cap": 2,
+    "note": null
+   },
+   {
+    "theatre": "mdb",
     "cid": "9899",
     "start": "2026-11-17T14:00:00+01:00",
     "title": "Les Misérables (Bídníci)",
@@ -719,7 +707,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 5,
     "note": null
    },
    {
@@ -731,7 +719,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 6,
     "note": null
    },
    {
@@ -851,7 +839,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 3,
     "note": null
    },
    {
@@ -875,7 +863,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 1,
+    "cap": 0,
     "note": null
    },
    {
@@ -887,7 +875,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 7,
     "note": null
    },
    {
@@ -916,18 +904,6 @@
    },
    {
     "theatre": "mdb",
-    "cid": null,
-    "start": "2026-11-25T19:00:00+01:00",
-    "title": "Lazebník sevillský",
-    "url": "https://www.mdb.cz/cs/inscenace/lazebnik-sevillsky",
-    "stage": "",
-    "genre": "Činohra",
-    "sale": null,
-    "cap": null,
-    "note": "bez prodeje"
-   },
-   {
-    "theatre": "mdb",
     "cid": "9911",
     "start": "2026-11-25T19:00:00+01:00",
     "title": "Mamma Mia!",
@@ -937,6 +913,18 @@
     "sale": "2026-09-15T08:00:00+02:00",
     "cap": 0,
     "note": null
+   },
+   {
+    "theatre": "mdb",
+    "cid": null,
+    "start": "2026-11-25T19:00:00+01:00",
+    "title": "Lazebník sevillský",
+    "url": "https://www.mdb.cz/cs/inscenace/lazebnik-sevillsky",
+    "stage": "",
+    "genre": "Činohra",
+    "sale": null,
+    "cap": null,
+    "note": "bez prodeje"
    },
    {
     "theatre": "mdb",
@@ -964,24 +952,24 @@
    },
    {
     "theatre": "mdb",
-    "cid": "9884",
-    "start": "2026-11-27T19:00:00+01:00",
-    "title": "Ti druzí",
-    "url": "https://www.mdb.cz/cs/inscenace/ti-druzi",
-    "stage": "Činoherní scéna",
-    "genre": "Činohra",
-    "sale": null,
-    "cap": 0,
-    "note": null
-   },
-   {
-    "theatre": "mdb",
     "cid": "9901",
     "start": "2026-11-27T19:00:00+01:00",
     "title": "Les Misérables (Bídníci)",
     "url": "https://www.mdb.cz/cs/inscenace/les-miserables-bidnici-2",
     "stage": "Hudební scéna",
     "genre": "Muzikál",
+    "sale": null,
+    "cap": 0,
+    "note": null
+   },
+   {
+    "theatre": "mdb",
+    "cid": "9884",
+    "start": "2026-11-27T19:00:00+01:00",
+    "title": "Ti druzí",
+    "url": "https://www.mdb.cz/cs/inscenace/ti-druzi",
+    "stage": "Činoherní scéna",
+    "genre": "Činohra",
     "sale": null,
     "cap": 0,
     "note": null
@@ -1192,24 +1180,24 @@
    },
    {
     "theatre": "mdb",
-    "cid": "9973",
-    "start": "2026-12-06T18:00:00+01:00",
-    "title": "Les Misérables (Bídníci)",
-    "url": "https://www.mdb.cz/cs/inscenace/les-miserables-bidnici-2",
-    "stage": "Hudební scéna",
-    "genre": "Muzikál",
-    "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 0,
-    "note": null
-   },
-   {
-    "theatre": "mdb",
     "cid": "9955",
     "start": "2026-12-06T18:00:00+01:00",
     "title": "Lazebník sevillský",
     "url": "https://www.mdb.cz/cs/inscenace/lazebnik-sevillsky",
     "stage": "Činoherní scéna",
     "genre": "Činohra",
+    "sale": "2026-10-15T08:00:00+02:00",
+    "cap": 0,
+    "note": null
+   },
+   {
+    "theatre": "mdb",
+    "cid": "9973",
+    "start": "2026-12-06T18:00:00+01:00",
+    "title": "Les Misérables (Bídníci)",
+    "url": "https://www.mdb.cz/cs/inscenace/les-miserables-bidnici-2",
+    "stage": "Hudební scéna",
+    "genre": "Muzikál",
     "sale": "2026-10-15T08:00:00+02:00",
     "cap": 0,
     "note": null
@@ -1235,7 +1223,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 14,
+    "cap": 18,
     "note": null
    },
    {
@@ -1576,18 +1564,6 @@
    },
    {
     "theatre": "mdb",
-    "cid": "9959",
-    "start": "2026-12-27T18:00:00+01:00",
-    "title": "Ti druzí",
-    "url": "https://www.mdb.cz/cs/inscenace/ti-druzi",
-    "stage": "Činoherní scéna",
-    "genre": "Činohra",
-    "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 175,
-    "note": null
-   },
-   {
-    "theatre": "mdb",
     "cid": "9977",
     "start": "2026-12-27T18:00:00+01:00",
     "title": "Pohádka o živé vodě",
@@ -1596,6 +1572,18 @@
     "genre": "Muzikál",
     "sale": "2026-10-15T08:00:00+02:00",
     "cap": 324,
+    "note": null
+   },
+   {
+    "theatre": "mdb",
+    "cid": "9959",
+    "start": "2026-12-27T18:00:00+01:00",
+    "title": "Ti druzí",
+    "url": "https://www.mdb.cz/cs/inscenace/ti-druzi",
+    "stage": "Činoherní scéna",
+    "genre": "Činohra",
+    "sale": "2026-10-15T08:00:00+02:00",
+    "cap": 177,
     "note": null
    },
    {
@@ -1643,7 +1631,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 126,
+    "cap": 122,
     "note": null
    },
    {
@@ -1703,37 +1691,25 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 163,
+    "cap": 159,
     "note": null
    }
   ]
  },
  "ndb": {
-  "ts": "2026-10-17T23:26:54",
+  "ts": "2026-10-18T02:01:13",
   "events": [
    {
     "theatre": "ndb",
-    "cid": "4255878",
-    "start": "2026-10-19T19:00:00",
-    "title": "Folk Team",
-    "url": "https://www.ndbrno.cz/program/folk-team/",
-    "stage": "Mahenovo divadlo",
-    "genre": "",
-    "sale": null,
-    "cap": null,
-    "note": null
-   },
-   {
-    "theatre": "ndb",
-    "cid": "4645588",
+    "cid": null,
     "start": "2026-10-20T19:00:00",
     "title": "Písňový recitál Richarda Nováka",
     "url": "https://www.ndbrno.cz/program/pisnovy-recital-richarda-novaka/",
     "stage": "Divadlo Reduta",
     "genre": "Opera",
     "sale": null,
-    "cap": null,
-    "note": null
+    "cap": 0,
+    "note": "vyprodáno"
    },
    {
     "theatre": "ndb",
@@ -2709,15 +2685,15 @@
    },
    {
     "theatre": "ndb",
-    "cid": null,
+    "cid": "4636046",
     "start": "2026-11-15T15:00:00",
     "title": "Po stopách medvěda Kubuly: zážitková procházka Mahenovým divadlem pro nejmenší a jejich rodiče",
     "url": "https://www.ndbrno.cz/program/po-stopach/",
     "stage": "Mahenovo divadlo - Malá scéna",
     "genre": "Činohra",
     "sale": null,
-    "cap": 0,
-    "note": "vyprodáno"
+    "cap": null,
+    "note": null
    },
    {
     "theatre": "ndb",
