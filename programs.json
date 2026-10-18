@@ -1,6 +1,6 @@
 {
  "mdb": {
-  "ts": "2026-10-18T02:01:13",
+  "ts": "2026-10-18T06:26:48",
   "events": [
    {
     "theatre": "mdb",
@@ -179,7 +179,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-06-15T08:00:00+02:00",
-    "cap": 1,
+    "cap": 0,
     "note": null
    },
    {
@@ -191,7 +191,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-06-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 3,
     "note": null
    },
    {
@@ -875,7 +875,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 7,
+    "cap": 11,
     "note": null
    },
    {
