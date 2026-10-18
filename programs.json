@@ -1,19 +1,7 @@
 {
  "mdb": {
-  "ts": "2026-10-18T22:37:51",
+  "ts": "2026-10-19T01:08:39",
   "events": [
-   {
-    "theatre": "mdb",
-    "cid": "9913",
-    "start": "2026-10-18T18:00:00+02:00",
-    "title": "Zdena 2.0",
-    "url": "https://www.mdb.cz/cs/inscenace/zdena-2-0",
-    "stage": "Činoherní scéna",
-    "genre": "Koncert",
-    "sale": "2026-09-10T08:00:00+02:00",
-    "cap": 4,
-    "note": null
-   },
    {
     "theatre": "mdb",
     "cid": "9858",
@@ -131,7 +119,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-06-15T08:00:00+02:00",
-    "cap": 9,
+    "cap": 7,
     "note": null
    },
    {
@@ -203,7 +191,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-06-15T08:00:00+02:00",
-    "cap": 14,
+    "cap": 9,
     "note": null
    },
    {
@@ -292,6 +280,18 @@
    },
    {
     "theatre": "mdb",
+    "cid": "9887",
+    "start": "2026-11-01T18:00:00+01:00",
+    "title": "Carmen, příběh z New Yorku",
+    "url": "https://www.mdb.cz/cs/inscenace/carmen-pribeh-z-new-yorku",
+    "stage": "Hudební scéna",
+    "genre": "Muzikál",
+    "sale": "2026-09-15T08:00:00+02:00",
+    "cap": 3,
+    "note": null
+   },
+   {
+    "theatre": "mdb",
     "cid": "9914",
     "start": "2026-11-01T18:00:00+01:00",
     "title": "Narozeninový koncert",
@@ -300,18 +300,6 @@
     "genre": "Koncert",
     "sale": "2026-09-15T08:00:00+02:00",
     "cap": 0,
-    "note": null
-   },
-   {
-    "theatre": "mdb",
-    "cid": "9887",
-    "start": "2026-11-01T18:00:00+01:00",
-    "title": "Carmen, příběh z New Yorku",
-    "url": "https://www.mdb.cz/cs/inscenace/carmen-pribeh-z-new-yorku",
-    "stage": "Hudební scéna",
-    "genre": "Muzikál",
-    "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 5,
     "note": null
    },
    {
@@ -347,7 +335,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 1,
+    "cap": 3,
     "note": null
    },
    {
@@ -503,7 +491,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 5,
     "note": null
    },
    {
@@ -527,7 +515,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 1,
     "note": null
    },
    {
@@ -575,7 +563,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 1,
     "note": null
    },
    {
@@ -659,7 +647,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 1,
     "note": null
    },
    {
@@ -676,18 +664,6 @@
    },
    {
     "theatre": "mdb",
-    "cid": "9878",
-    "start": "2026-11-16T19:00:00+01:00",
-    "title": "Rozum a cit",
-    "url": "https://www.mdb.cz/cs/inscenace/rozum-a-cit",
-    "stage": "Činoherní scéna",
-    "genre": "Činohra",
-    "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 98,
-    "note": null
-   },
-   {
-    "theatre": "mdb",
     "cid": "9898",
     "start": "2026-11-16T19:00:00+01:00",
     "title": "Les Misérables (Bídníci)",
@@ -696,6 +672,18 @@
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
     "cap": 0,
+    "note": null
+   },
+   {
+    "theatre": "mdb",
+    "cid": "9878",
+    "start": "2026-11-16T19:00:00+01:00",
+    "title": "Rozum a cit",
+    "url": "https://www.mdb.cz/cs/inscenace/rozum-a-cit",
+    "stage": "Činoherní scéna",
+    "genre": "Činohra",
+    "sale": "2026-09-15T08:00:00+02:00",
+    "cap": 98,
     "note": null
    },
    {
@@ -719,7 +707,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 1,
     "note": null
    },
    {
@@ -851,7 +839,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 3,
     "note": null
    },
    {
@@ -899,19 +887,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 0,
-    "note": null
-   },
-   {
-    "theatre": "mdb",
-    "cid": "9911",
-    "start": "2026-11-25T19:00:00+01:00",
-    "title": "Mamma Mia!",
-    "url": "https://www.mdb.cz/cs/inscenace/mamma-mia",
-    "stage": "Hudební scéna",
-    "genre": "Muzikál",
-    "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 3,
     "note": null
    },
    {
@@ -925,6 +901,18 @@
     "sale": null,
     "cap": null,
     "note": "bez prodeje"
+   },
+   {
+    "theatre": "mdb",
+    "cid": "9911",
+    "start": "2026-11-25T19:00:00+01:00",
+    "title": "Mamma Mia!",
+    "url": "https://www.mdb.cz/cs/inscenace/mamma-mia",
+    "stage": "Hudební scéna",
+    "genre": "Muzikál",
+    "sale": "2026-09-15T08:00:00+02:00",
+    "cap": 1,
+    "note": null
    },
    {
     "theatre": "mdb",
@@ -952,24 +940,24 @@
    },
    {
     "theatre": "mdb",
-    "cid": "9901",
-    "start": "2026-11-27T19:00:00+01:00",
-    "title": "Les Misérables (Bídníci)",
-    "url": "https://www.mdb.cz/cs/inscenace/les-miserables-bidnici-2",
-    "stage": "Hudební scéna",
-    "genre": "Muzikál",
-    "sale": null,
-    "cap": 0,
-    "note": null
-   },
-   {
-    "theatre": "mdb",
     "cid": "9884",
     "start": "2026-11-27T19:00:00+01:00",
     "title": "Ti druzí",
     "url": "https://www.mdb.cz/cs/inscenace/ti-druzi",
     "stage": "Činoherní scéna",
     "genre": "Činohra",
+    "sale": null,
+    "cap": 0,
+    "note": null
+   },
+   {
+    "theatre": "mdb",
+    "cid": "9901",
+    "start": "2026-11-27T19:00:00+01:00",
+    "title": "Les Misérables (Bídníci)",
+    "url": "https://www.mdb.cz/cs/inscenace/les-miserables-bidnici-2",
+    "stage": "Hudební scéna",
+    "genre": "Muzikál",
     "sale": null,
     "cap": 0,
     "note": null
@@ -995,7 +983,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 3,
     "note": null
    },
    {
@@ -1007,7 +995,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 2,
     "note": null
    },
    {
@@ -1343,7 +1331,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 41,
+    "cap": 39,
     "note": null
    },
    {
@@ -1511,7 +1499,7 @@
     "stage": "Hudební scéna",
     "genre": "Koncert",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 127,
+    "cap": 123,
     "note": null
    },
    {
@@ -1697,7 +1685,7 @@
   ]
  },
  "ndb": {
-  "ts": "2026-10-18T22:37:51",
+  "ts": "2026-10-19T01:08:39",
   "events": [
    {
     "theatre": "ndb",
@@ -1785,15 +1773,15 @@
    },
    {
     "theatre": "ndb",
-    "cid": "3894348",
+    "cid": null,
     "start": "2026-10-24T15:00:00",
     "title": "Arola Quartet",
     "url": "https://www.ndbrno.cz/program/arola-quartet/",
     "stage": "",
     "genre": "Opera",
     "sale": null,
-    "cap": null,
-    "note": null
+    "cap": 0,
+    "note": "vyprodáno"
    },
    {
     "theatre": "ndb",
@@ -2157,15 +2145,15 @@
    },
    {
     "theatre": "ndb",
-    "cid": null,
+    "cid": "3908793",
     "start": "2026-11-03T19:00:00",
     "title": "Počátek románu (Hausopera)",
     "url": "https://www.ndbrno.cz/program/pocatek-romanu/",
     "stage": "",
     "genre": "Opera",
     "sale": null,
-    "cap": 0,
-    "note": "vyprodáno"
+    "cap": null,
+    "note": null
    },
    {
     "theatre": "ndb",
@@ -2205,15 +2193,15 @@
    },
    {
     "theatre": "ndb",
-    "cid": null,
+    "cid": "3896078",
     "start": "2026-11-05T19:00:00",
     "title": "Její pastorkyňa",
     "url": "https://www.ndbrno.cz/program/jeji-pastorkyna-3/",
     "stage": "Janáčkovo divadlo",
     "genre": "Opera",
     "sale": null,
-    "cap": 0,
-    "note": "vyprodáno"
+    "cap": null,
+    "note": null
    },
    {
     "theatre": "ndb",
@@ -2709,15 +2697,15 @@
    },
    {
     "theatre": "ndb",
-    "cid": null,
+    "cid": "3894260",
     "start": "2026-11-15T15:00:00",
     "title": "Šárka",
     "url": "https://www.ndbrno.cz/program/sarka-verze-1888-2/",
     "stage": "Besední dům",
     "genre": "Opera",
     "sale": null,
-    "cap": 0,
-    "note": "vyprodáno"
+    "cap": null,
+    "note": null
    },
    {
     "theatre": "ndb",
@@ -2745,15 +2733,15 @@
    },
    {
     "theatre": "ndb",
-    "cid": null,
+    "cid": "3894223",
     "start": "2026-11-16T19:00:00",
     "title": "Šárka",
     "url": "https://www.ndbrno.cz/program/sarka-verze-1888-3/",
     "stage": "Besední dům",
     "genre": "Opera",
     "sale": null,
-    "cap": 0,
-    "note": "vyprodáno"
+    "cap": null,
+    "note": null
    },
    {
     "theatre": "ndb",
