@@ -1,7 +1,8 @@
-"""Vygeneruje HTML přehled představení brněnských divadel s proklikem přímo na mapu sálu.
+"""Vygeneruje HTML přehled představení divadel s proklikem přímo na mapu sálu.
 
-Divadla: Městské divadlo Brno (API webu) a Národní divadlo Brno (program z HTML webu).
-Obě prodávají přes systém Colosseum, proto stejný postup pro adresu sálu i volná místa.
+Divadla: Městské divadlo Brno (API webu), Národní divadlo Brno a Slovácké divadlo Uherské Hradiště
+(program z HTML webu). Všechna prodávají přes systém Colosseum, proto stejný postup pro adresu sálu
+i volná místa.
 
 Použití:
     python divadla_predprodej.py            # všechna budoucí představení, která už jsou v programu
@@ -38,14 +39,19 @@ PROGRAMS = Path(__file__).with_name("programs.json")  # poslední úspěšně na
 # Pole "form" odpovídají formuláři, který posílá tlačítko „Koupit vstupenky“ na webu divadla.
 THEATRES = {
     "mdb": {"name": "Městské divadlo Brno", "short": "MDB", "web": "https://www.mdb.cz",
-            "server": "https://server.mdb.cz", "prefix": "mdb",
+            "server": "https://server.mdb.cz", "prefix": "mdb", "cap_on_web": True,
             "form": {"mrsid": 1, "language": "cs", "currency": "CZK"}},
     "ndb": {"name": "Národní divadlo Brno", "short": "NdB", "web": "https://www.ndbrno.cz",
             "server": "https://online.colosseum.eu", "prefix": "ndbrno",
             "form": {"mrsid": 83, "language": "cs-CZ"}},
+    "sd": {"name": "Slovácké divadlo", "short": "SD UH", "web": "https://www.slovackedivadlo.cz",
+           "server": "https://evstupenky.slovackedivadlo.cz", "prefix": "divadlo", "cap_on_web": True,
+           "form": {"mrsid": 1, "language": "cs-CZ", "currency": "CZK"}},
 }
 DEFAULT_THEATRE = "mdb"  # předvybrané divadlo ve filtru
-NDB_REFRESH = timedelta(hours=6)  # NdB nemá počet volných míst v API, mapu sálu obnovujeme podle stáří
+# cap_on_web: počet volných míst uvádí web divadla, mapu sálu stačí načíst při jeho změně.
+# Ostatním (NdB) mapu sálu obnovujeme podle stáří.
+NDB_REFRESH = timedelta(hours=6)
 NDB_REFRESH_PER_RUN = 60
 
 
@@ -140,6 +146,47 @@ def parse_ndb_block(b):
     }
 
 
+# --- Slovácké divadlo: celý program na jedné stránce, po měsících ---
+
+def fetch_sd():
+    web = THEATRES["sd"]["web"]
+    page = opener().open(f"{web}/program", timeout=30).read().decode("utf-8", "replace")
+    events, year = [], None
+    for row in re.split(r'<tr class="program-', page)[1:]:
+        if row.startswith("month"):  # <strong>Listopad 2026</strong>
+            m = re.search(r"<strong>\s*(\S+)\s+(\d{4})", row)
+            year = m.group(2) if m and m.group(1).lower() in MONTHS else None
+        elif year:
+            e = parse_sd_row(row, year)
+            if e:
+                events.append(e)
+    return events
+
+
+def parse_sd_row(b, year):
+    when = re.search(r"<span>(\d\d)/(\d\d)</span>", b)
+    hhmm = re.search(r'class="item-time"[^>]*>\s*(\d\d)\.(\d\d)', b)
+    title = re.search(r'class="item-title">\s*(?:<a href="([^"]*)"[^>]*>)?(.*?)</(?:a|div)>', b, re.S)
+    if not when or not hhmm or not title:
+        return None
+    cid = re.search(r'colosseum-buy-form.*?name="eventid" value="(\d+)"', b, re.S)
+    sold_out = "Vyprodáno" in b
+    if not cid and not sold_out:
+        return None  # předplatné skupiny, prodej jinde (odkaz na cizí web), akce bez vstupenek
+    # <span class="item-time" title="Zbývá 37 vstupenek z 382 (Prodáno: 345 = 90 %)">
+    left = re.search(r'title="Zbývá (\d+) vstup', b)
+    place = re.search(r'class="item-place">([^<]*)', b)
+    d, mo = when.groups()
+    href = title.group(1)
+    return {
+        "theatre": "sd", "cid": cid.group(1) if cid else None, "start": f"{year}-{mo}-{d}T{hhmm.group(1)}:{hhmm.group(2)}:00",
+        "title": text(title.group(2)), "url": urllib.parse.urljoin(THEATRES["sd"]["web"] + "/", href) if href else THEATRES["sd"]["web"],
+        "stage": text(place.group(1)) if place else "", "genre": "",
+        "sale": None, "cap": 0 if sold_out else (int(left.group(1)) if left else None),
+        "note": "vyprodáno" if sold_out else None,
+    }
+
+
 # --- Colosseum: adresa sálu a mapa míst ---
 
 def hall_info(theatre, cid, url=None):
@@ -227,8 +274,8 @@ def price_label(info):
 
 
 def free_count(e, info):
-    """MDB: číslo z API webu. NdB: součet volných míst z mapy sálu."""
-    if e["theatre"] == "mdb" or e["cap"] is not None:
+    """MDB a SD UH: číslo z webu divadla. NdB: součet volných míst z mapy sálu."""
+    if e["cap"] is not None or e["theatre"] == "mdb":
         return e["cap"]
     cats = (info or {}).get("cats")
     return sum(f for _, f in cats.values()) if cats else None
@@ -290,10 +337,10 @@ def render(events, urls, seats, months, stale=None):
 </tr>""")
 
     config = {k: {"server": t["server"], "form": t["form"]} for k, t in THEATRES.items()}
-    links = " a ".join(f'<a href="{t["web"]}" target="_blank" rel="noopener">{t["short"]}</a>' for t in THEATRES.values())
+    links = ", ".join(f'<a href="{t["web"]}" target="_blank" rel="noopener">{t["short"]}</a>' for t in THEATRES.values())
     return f"""<!doctype html>
 <html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Brněnská divadla – sály</title>
+<title>Divadla – sály</title>
 <style>
 :root {{ --bg:#f6f7f9; --card:#fff; --fg:#1b1f24; --muted:#6b7280; --line:#e5e7eb; --accent:#b4003c;
         --ok:#166534; --ok-bg:#dcfce7; --low:#854d0e; --low-bg:#fef08a; --zero:#991b1b; --zero-bg:#fecaca; }}
@@ -355,7 +402,7 @@ details .cats {{ margin-top:4px; font-size:13px; line-height:1.5 }}
   tbody td:nth-child(6) {{ grid-area:btn; }}
 }}
 </style></head><body><main>
-<div class="top"><h1>Brněnská divadla – sály a volná místa</h1><button id="theme" onclick="cycleTheme()"></button></div>
+<div class="top"><h1>Divadla – sály a volná místa</h1><button id="theme" onclick="cycleTheme()"></button></div>
 <div class="muted">Seznam a volná místa k {generated}{stale_note} · neoficiální rozcestník, nákup probíhá přímo na webu {links}</div>
 <div class="bar">
   <div class="tabs" id="months">{"".join(month_button(m) for m in months)}<button data-month="all">Vše</button></div>
@@ -377,7 +424,7 @@ details .cats {{ margin-top:4px; font-size:13px; line-height:1.5 }}
 <p class="note">„Vstupenky“ otevře novou záložku s aktuální mapou sálu v prodejním systému divadla (nejdřív v ní na okamžik otevře představení, pak hned přejde na sál).
 Pokud zůstane na hlášce „Na tuto akci není možné provádět rezervace“, klikni na „Vstupenky“ znovu.
 Před začátkem předprodeje jsou místa vidět, ale nejdou vybrat.
-„Volno“ u MDB je počet volných míst, jak ho uvádí web mdb.cz (obnovuje se každou hodinu), u NdB součet volných míst z mapy sálu (obnovuje se zhruba každých 6 hodin).
+„Volno“ u MDB a SD UH je počet volných míst, jak ho uvádí web divadla (obnovuje se každou hodinu), u NdB součet volných míst z mapy sálu (obnovuje se zhruba každých 6 hodin).
 Ceny jsou základní ceny cenových kategorií, ve kterých jsou ještě volná místa; po rozkliknutí rozpad po kategoriích.</p>
 </main>
 <script>
@@ -467,7 +514,7 @@ setMonth(location.hash.slice(1));
 # --- hlavní běh ---
 
 def todo_list(events, urls, seats):
-    """Představení, u kterých je potřeba načíst sál: nová, u MDB se změnou počtu volných míst podle API,
+    """Představení, u kterých je potřeba načíst sál: nová, u MDB a SD UH se změnou počtu volných míst podle webu,
     u NdB s mapou starší než NDB_REFRESH (nejstarší napřed, nejvýš NDB_REFRESH_PER_RUN)."""
     now = datetime.now()
     todo, stale = [], []
@@ -478,7 +525,7 @@ def todo_list(events, urls, seats):
         info = seats.get(k)
         if k not in urls or not info:
             todo.append(e)
-        elif e["theatre"] == "mdb":
+        elif THEATRES[e["theatre"]].get("cap_on_web"):
             if info.get("cap") != e["cap"]:
                 todo.append(e)
         elif now - datetime.fromisoformat(info.get("ts", "2000-01-01T00:00:00")) > NDB_REFRESH:
@@ -500,7 +547,7 @@ def fetch_ndb_or_file():
 def main():
     events, stale = [], {}
     programs = json.loads(PROGRAMS.read_text(encoding="utf-8")) if PROGRAMS.exists() else {}
-    for theatre, fetch in (("mdb", fetch_mdb), ("ndb", fetch_ndb_or_file)):
+    for theatre, fetch in (("mdb", fetch_mdb), ("ndb", fetch_ndb_or_file), ("sd", fetch_sd)):
         name = THEATRES[theatre]["short"]
         try:
             found = fetch()

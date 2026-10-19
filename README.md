@@ -1,7 +1,7 @@
-# Brněnská divadla – sály a volná místa
+# Divadla – sály a volná místa
 
-Neoficiální rozcestník: seznam představení Městského divadla Brno a Národního divadla Brno
-s počtem volných míst, cenami a tlačítkem, které otevře mapu sálu v prodejním systému Colosseum –
+Neoficiální rozcestník: seznam představení Městského divadla Brno, Národního divadla Brno
+a Slováckého divadla Uherské Hradiště s počtem volných míst, cenami a tlačítkem, které otevře mapu sálu v prodejním systému Colosseum –
 i u představení, jejichž předprodej ještě nezačal. Nákup probíhá výhradně na webech divadel.
 
 ## Jak to funguje
@@ -10,6 +10,9 @@ i u představení, jejichž předprodej ještě nezačal. Nákup probíhá výhr
   (včetně počtu volných míst `availableCapacity`).
 - NdB: program se čte z HTML stránek `https://www.ndbrno.cz/program/?month=M&years=R`;
   z formuláře „Vstupenky“ se bere `eventid` (prodejní systém `online.colosseum.eu`, `mrsid=83`).
+- Slovácké divadlo: celý program je na stránce `https://www.slovackedivadlo.cz/program` (rok z nadpisů
+  měsíců, počet volných míst z popisku „Zbývá N vstupenek z M“); prodejní systém
+  `evstupenky.slovackedivadlo.cz` (`mrsid=1`, cesta `/divadlo/standard/Hall/...`).
 - Tlačítko „Koupit vstupenky“ na webu posílá POST na `https://server.mdb.cz/hall` (`mrsid=1`, `eventid`).
   Session si pak pamatuje představení a `/mdb/standard/Hall/PrepareDetail` vrátí adresu sálu
   `Hall/Index/<id>/<token>`. Token je pro představení stálý, proto se ukládá do `hall_urls.json`.
