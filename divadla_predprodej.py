@@ -178,10 +178,13 @@ def parse_sd_row(b, year):
     place = re.search(r'class="item-place">([^<]*)', b)
     d, mo = when.groups()
     href = title.group(1)
+    stage = text(place.group(1)) if place else ""
+    if stage == "Slovácké divadlo":  # program tak uvádí hlavní scénu, jinde na webu je „Hlavní scéna“
+        stage = "Hlavní scéna"
     return {
         "theatre": "sd", "cid": cid.group(1) if cid else None, "start": f"{year}-{mo}-{d}T{hhmm.group(1)}:{hhmm.group(2)}:00",
         "title": text(title.group(2)), "url": urllib.parse.urljoin(THEATRES["sd"]["web"] + "/", href) if href else THEATRES["sd"]["web"],
-        "stage": text(place.group(1)) if place else "", "genre": "",
+        "stage": stage, "genre": "",
         "sale": None, "cap": 0 if sold_out else (int(left.group(1)) if left else None),
         "note": "vyprodáno" if sold_out else None,
     }
