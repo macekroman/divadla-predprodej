@@ -26,8 +26,15 @@ python divadla_predprodej.py            # všechna budoucí představení v prog
 python divadla_predprodej.py 2026-12    # konkrétní měsíc
 ```
 
+Uložená data jsou ve větvi `data`; bez nich skript načte všechny sály znovu. Stáhnout jdou takto:
+
+```
+git fetch origin data && git checkout origin/data -- . && git restore --staged .
+```
+
 ## Zveřejnění
 
 GitHub Actions (`.github/workflows/pages.yml`) stránku každou hodinu přegeneruje (včetně počtu volných míst z API webu), uloží nové
-adresy sálů do repozitáře a nasadí ji na GitHub Pages. Spustit ručně jde přes záložku Actions
+adresy sálů, volná místa a program do větve `data` (jediný commit, který se pokaždé přepíše,
+ať nezanáší historii `main`) a nasadí ji na GitHub Pages. Spustit ručně jde přes záložku Actions
 → „Aktualizace stránky“ → Run workflow.

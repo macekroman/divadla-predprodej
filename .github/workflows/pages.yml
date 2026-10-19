@@ -57,10 +57,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
-      # Nejnovější main, ne commit, který běh spustil – jinak by chyběla data uložená předchozím během.
+      - uses: actions/checkout@v4
+
+      # Uložená data (adresy sálů, volná místa, programy) jsou ve větvi data, ať nezanáší historii main.
       - uses: actions/checkout@v4
         with:
-          ref: main
+          ref: data
+          path: data
+
+      - name: Převzít uložená data
+        run: cp data/*.json .
 
       - uses: actions/setup-python@v5
         with:
@@ -86,12 +92,16 @@ jobs:
           TZ: Europe/Prague
           CACHE_ONLY: ${{ (github.event_name == 'push' || inputs.cache_only) && '1' || '' }}
 
+      # Větev data má jediný commit, který se pokaždé přepíše – historie nenarůstá.
+      # Běhy se nepřekrývají (concurrency), takže force push nic nepřepíše.
       - name: Uložit adresy sálů a volná místa podle cen
+        working-directory: data
         run: |
+          cp ../hall_urls.json ../seats.json ../programs.json .
           git config user.name "github-actions[bot]"
           git config user.email "41898333+github-actions[bot]@users.noreply.github.com"
-          for f in hall_urls.json seats.json programs.json; do [ -f "$f" ] && git add "$f"; done
-          git diff --cached --quiet || (git commit -m "Aktualizace adres sálů a volných míst" && git pull --rebase -X theirs && git push)  # při střetu dat vyhrává tahle (čerstvější) verze
+          git add -A
+          git diff --cached --quiet || (git commit --amend --reset-author -m "Uložená data (adresy sálů, volná místa, programy)" && git push --force)
 
       - uses: actions/upload-pages-artifact@v3
         with:
