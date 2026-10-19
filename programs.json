@@ -1,6 +1,6 @@
 {
  "mdb": {
-  "ts": "2026-10-19T01:08:39",
+  "ts": "2026-10-19T03:13:43",
   "events": [
    {
     "theatre": "mdb",
@@ -563,7 +563,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 1,
+    "cap": 0,
     "note": null
    },
    {
@@ -707,7 +707,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 1,
+    "cap": 0,
     "note": null
    },
    {
@@ -983,7 +983,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 3,
+    "cap": 1,
     "note": null
    },
    {
@@ -1343,7 +1343,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 256,
+    "cap": 254,
     "note": null
    },
    {
@@ -1685,20 +1685,8 @@
   ]
  },
  "ndb": {
-  "ts": "2026-10-19T01:08:39",
+  "ts": "2026-10-19T03:13:43",
   "events": [
-   {
-    "theatre": "ndb",
-    "cid": null,
-    "start": "2026-10-20T19:00:00",
-    "title": "Písňový recitál Richarda Nováka",
-    "url": "https://www.ndbrno.cz/program/pisnovy-recital-richarda-novaka/",
-    "stage": "Divadlo Reduta",
-    "genre": "Opera",
-    "sale": null,
-    "cap": 0,
-    "note": "vyprodáno"
-   },
    {
     "theatre": "ndb",
     "cid": "3896149",
