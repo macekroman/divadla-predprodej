@@ -1,6 +1,6 @@
 {
  "mdb": {
-  "ts": "2026-10-19T15:15:56",
+  "ts": "2026-10-19T21:22:20",
   "events": [
    {
     "theatre": "mdb",
@@ -11,7 +11,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-06-15T08:00:00+02:00",
-    "cap": 7,
+    "cap": 13,
     "note": null
    },
    {
@@ -23,7 +23,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-06-15T08:00:00+02:00",
-    "cap": 30,
+    "cap": 28,
     "note": null
    },
    {
@@ -35,7 +35,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-06-15T08:00:00+02:00",
-    "cap": 28,
+    "cap": 26,
     "note": null
    },
    {
@@ -47,7 +47,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-06-15T08:00:00+02:00",
-    "cap": 19,
+    "cap": 18,
     "note": null
    },
    {
@@ -71,7 +71,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-06-15T08:00:00+02:00",
-    "cap": 1,
+    "cap": 3,
     "note": null
    },
    {
@@ -119,7 +119,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-06-15T08:00:00+02:00",
-    "cap": 7,
+    "cap": 15,
     "note": null
    },
    {
@@ -131,7 +131,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-06-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 3,
     "note": null
    },
    {
@@ -143,7 +143,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-06-15T08:00:00+02:00",
-    "cap": 10,
+    "cap": 8,
     "note": null
    },
    {
@@ -179,7 +179,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-06-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 3,
     "note": null
    },
    {
@@ -191,7 +191,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-06-15T08:00:00+02:00",
-    "cap": 3,
+    "cap": 1,
     "note": null
    },
    {
@@ -203,7 +203,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-06-15T08:00:00+02:00",
-    "cap": 41,
+    "cap": 53,
     "note": null
    },
    {
@@ -215,7 +215,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-06-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 8,
     "note": null
    },
    {
@@ -239,7 +239,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-06-15T08:00:00+02:00",
-    "cap": 10,
+    "cap": 16,
     "note": null
    },
    {
@@ -263,7 +263,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-06-15T08:00:00+02:00",
-    "cap": 2,
+    "cap": 0,
     "note": null
    },
    {
@@ -287,7 +287,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 3,
+    "cap": 2,
     "note": null
    },
    {
@@ -323,7 +323,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 1,
     "note": null
    },
    {
@@ -335,7 +335,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 3,
+    "cap": 8,
     "note": null
    },
    {
@@ -419,7 +419,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 2,
+    "cap": 1,
     "note": null
    },
    {
@@ -491,7 +491,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 6,
+    "cap": 4,
     "note": null
    },
    {
@@ -599,7 +599,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 1,
     "note": null
    },
    {
@@ -659,7 +659,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 13,
+    "cap": 11,
     "note": null
    },
    {
@@ -683,7 +683,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 90,
+    "cap": 83,
     "note": null
    },
    {
@@ -827,7 +827,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 5,
+    "cap": 1,
     "note": null
    },
    {
@@ -863,7 +863,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 1,
+    "cap": 0,
     "note": null
    },
    {
@@ -911,7 +911,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 1,
+    "cap": 0,
     "note": null
    },
    {
@@ -995,7 +995,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-09-15T08:00:00+02:00",
-    "cap": 2,
+    "cap": 0,
     "note": null
    },
    {
@@ -1115,7 +1115,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 2,
+    "cap": 0,
     "note": null
    },
    {
@@ -1211,7 +1211,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 1,
     "note": null
    },
    {
@@ -1247,7 +1247,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 2,
+    "cap": 4,
     "note": null
    },
    {
@@ -1259,7 +1259,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 6,
+    "cap": 0,
     "note": null
    },
    {
@@ -1271,7 +1271,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 4,
+    "cap": 0,
     "note": null
    },
    {
@@ -1319,7 +1319,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 243,
+    "cap": 239,
     "note": null
    },
    {
@@ -1343,7 +1343,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 244,
+    "cap": 234,
     "note": null
    },
    {
@@ -1355,7 +1355,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 48,
+    "cap": 46,
     "note": null
    },
    {
@@ -1367,7 +1367,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 237,
+    "cap": 230,
     "note": null
    },
    {
@@ -1391,7 +1391,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 76,
+    "cap": 78,
     "note": null
    },
    {
@@ -1403,7 +1403,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 1,
+    "cap": 0,
     "note": null
    },
    {
@@ -1427,7 +1427,7 @@
     "stage": "Hudební scéna",
     "genre": "Koncert",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 5,
+    "cap": 3,
     "note": null
    },
    {
@@ -1463,7 +1463,7 @@
     "stage": "Hudební scéna",
     "genre": "Koncert",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 36,
+    "cap": 21,
     "note": null
    },
    {
@@ -1475,7 +1475,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 69,
+    "cap": 67,
     "note": null
    },
    {
@@ -1499,7 +1499,7 @@
     "stage": "Hudební scéna",
     "genre": "Koncert",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 105,
+    "cap": 91,
     "note": null
    },
    {
@@ -1511,7 +1511,7 @@
     "stage": "Hudební scéna",
     "genre": "Koncert",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 0,
+    "cap": 1,
     "note": null
    },
    {
@@ -1559,7 +1559,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 306,
+    "cap": 318,
     "note": null
    },
    {
@@ -1583,7 +1583,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 239,
+    "cap": 243,
     "note": null
    },
    {
@@ -1607,7 +1607,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 182,
+    "cap": 178,
     "note": null
    },
    {
@@ -1619,7 +1619,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 96,
+    "cap": 94,
     "note": null
    },
    {
@@ -1643,7 +1643,7 @@
     "stage": "Činoherní scéna",
     "genre": "Činohra",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 127,
+    "cap": 118,
     "note": null
    },
    {
@@ -1655,7 +1655,7 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 33,
+    "cap": 34,
     "note": null
    },
    {
@@ -1679,13 +1679,13 @@
     "stage": "Hudební scéna",
     "genre": "Muzikál",
     "sale": "2026-10-15T08:00:00+02:00",
-    "cap": 138,
+    "cap": 131,
     "note": null
    }
   ]
  },
  "ndb": {
-  "ts": "2026-10-19T15:15:56",
+  "ts": "2026-10-19T21:22:20",
   "events": [
    {
     "theatre": "ndb",
@@ -1761,15 +1761,15 @@
    },
    {
     "theatre": "ndb",
-    "cid": null,
+    "cid": "3894348",
     "start": "2026-10-24T15:00:00",
     "title": "Arola Quartet",
     "url": "https://www.ndbrno.cz/program/arola-quartet/",
     "stage": "",
     "genre": "Opera",
     "sale": null,
-    "cap": 0,
-    "note": "vyprodáno"
+    "cap": null,
+    "note": null
    },
    {
     "theatre": "ndb",
@@ -2145,15 +2145,15 @@
    },
    {
     "theatre": "ndb",
-    "cid": "3908794",
+    "cid": null,
     "start": "2026-11-04T19:00:00",
     "title": "Počátek románu (Hausopera)",
     "url": "https://www.ndbrno.cz/program/pocatek-romanu-2/",
     "stage": "",
     "genre": "Opera",
     "sale": null,
-    "cap": null,
-    "note": null
+    "cap": 0,
+    "note": "vyprodáno"
    },
    {
     "theatre": "ndb",
