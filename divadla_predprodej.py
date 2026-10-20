@@ -1,8 +1,8 @@
 """Vygeneruje HTML přehled představení divadel s proklikem přímo na mapu sálu.
 
 Divadla: Městské divadlo Brno (API webu), Národní divadlo Brno a Slovácké divadlo Uherské Hradiště
-(program z HTML webu). Všechna prodávají přes systém Colosseum, proto stejný postup pro adresu sálu
-i volná místa.
+(program z HTML webu) prodávají přes systém Colosseum, proto stejný postup pro adresu sálu
+i volná místa. Divadlo Bolka Polívky prodává přes GoOut (program i mapa sálu z API GoOut).
 
 Použití:
     python divadla_predprodej.py            # všechna budoucí představení, která už jsou v programu
@@ -47,6 +47,8 @@ THEATRES = {
     "sd": {"name": "Slovácké divadlo", "short": "SD UH", "web": "https://www.slovackedivadlo.cz",
            "server": "https://evstupenky.slovackedivadlo.cz", "prefix": "divadlo", "cap_on_web": True,
            "form": {"mrsid": 1, "language": "cs-CZ", "currency": "CZK"}},
+    # Prodává přes GoOut místo Colossea; "goout" je ID pořadatele.
+    "dbp": {"name": "Divadlo Bolka Polívky", "short": "DBP", "web": "https://divadlobolkapolivky.cz", "goout": 164},
 }
 DEFAULT_THEATRE = "mdb"  # předvybrané divadlo ve filtru
 # cap_on_web: počet volných míst uvádí web divadla, mapu sálu stačí načíst při jeho změně.
@@ -190,6 +192,84 @@ def parse_sd_row(b, year):
     }
 
 
+# --- Divadlo Bolka Polívky: program a místa z API GoOut (volá ho i web divadla a prodejní formulář) ---
+
+GOOUT = "https://goout.net/services"
+GOOUT_GENRES = {"play": "Činohra", "concerts": "Koncert", "for_children": "Pro děti"}
+
+
+def fetch_dbp():
+    t = THEATRES["dbp"]
+    params = [("contactIds[]", t["goout"]), ("languages[]", "cs"), ("hasSale", "true"),
+              ("included", "events,sales,venues")]
+    schedules, included, scroll = [], {}, None
+    while True:
+        more = [("scrollId", scroll)] if scroll else []
+        d = get_json(f"{GOOUT}/entities/v2/schedules?" + urllib.parse.urlencode(params + more))
+        schedules += d["data"]
+        included.update(((x["type"], x["id"]), x) for x in d["included"])
+        scroll = d["meta"].get("nextScrollId")
+        if not d["data"] or not scroll:
+            break
+    web_urls = dbp_web_urls()
+    events = []
+    for s in schedules:
+        a, rel = s["attributes"], s["relationships"]
+        sale = included.get(("sales", ((rel.get("sale") or {}).get("data") or {}).get("id")))
+        state = a["ticketingState"]
+        if not sale or not a["hasTime"] or state in ("hidden", "ended"):
+            continue  # bez prodeje, poukázky, skryté a skončené prodeje
+        event = included.get(("events", rel["event"]["data"]["id"]))
+        venue = included.get(("venues", rel["venue"]["data"]["id"]))
+        # „Divadlo Bolka Polívky – Bílý dům“ → „Bílý dům“
+        stage = venue["attributes"]["locales"]["cs"]["name"] if venue else ""
+        stage = "" if stage == t["name"] else stage.removeprefix(t["name"] + " – ")
+        events.append({
+            "theatre": "dbp", "cid": sale["id"], "start": a["startAt"],
+            "title": event["attributes"]["locales"]["cs"]["name"] if event else "",
+            "url": web_urls.get(a["startAt"][:16]) or a["locales"]["cs"]["siteUrl"],
+            "stage": stage, "genre": GOOUT_GENRES.get(event["attributes"]["mainCategory"], "") if event else "",
+            "sale": sale["attributes"]["startAt"], "cap": 0 if state == "sold_out" else None,
+            "note": {"sold_out": "vyprodáno", "cancelled": "zrušeno"}.get(state),
+        })
+    return events
+
+
+def dbp_web_urls():
+    """Stránky představení na webu divadla podle začátku (bez představení, která začínají současně)."""
+    try:
+        page = opener().open(f'{THEATRES["dbp"]["web"]}/program/', timeout=30).read().decode("utf-8", "replace")
+    except Exception as ex:  # odkazy pak povedou na GoOut
+        print(f"  DBP: web divadla nedostupný ({ex})", flush=True)
+        return {}
+    found = {}
+    # <div class="events-item" data-date="2026-10-21 19:00:00"> … <div class="events-title"><a href="…">
+    for day, hhmm, url in re.findall(r'data-date="([-\d]+) (\d\d:\d\d):\d\d".*?class="events-title">\s*<a href="([^"]+)"', page, re.S):
+        found.setdefault(f"{day}T{hhmm}", set()).add(url)
+    return {k: v.pop() for k, v in found.items() if len(v) == 1}
+
+
+def goout_halls(events):
+    """Prodeje GoOut po 20 najednou. Vrací {id prodeje: (adresa prodeje, místa jako u hall_info)}.
+    U volného sezení (bez mapy sálu) volná místa spočítat nejde, GoOut uvádí jen limit na objednávku."""
+    found = {}
+    for i in range(0, len(events), 20):
+        q = urllib.parse.urlencode({"saleIds": ",".join(e["cid"] for e in events[i:i + 20]), "language": "cs"})
+        for sid, s in get_json(f"{GOOUT}/feeder/v3/sales?{q}")["sales"].items():
+            # Skryté kategorie (přístavky, blokace) se koupit nedají.
+            prices = {d["id"]: str(d["priceCents"] // 100) for d in s["deals"].values() if d["active"] and not d["hidden"]}
+            cats = {}
+            for seat in (x for h in s["halls"] for x in h["seats"]):
+                price = prices.get(seat["dealId"])
+                if price:
+                    total_free = cats.setdefault(price, [0, 0])
+                    total_free[0] += 1
+                    total_free[1] += bool(seat["available"])
+            found[sid] = (s["url"], {"cats": cats, "on_sale": s["state"] == "ACTIVE"})
+        time.sleep(1)
+    return found
+
+
 # --- Colosseum: adresa sálu a mapa míst ---
 
 def hall_info(theatre, cid, url=None):
@@ -318,6 +398,8 @@ def render(events, urls, seats, months, stale=None):
             btn = f'<span class="muted">{e["note"]}</span>'
         elif not url:
             btn = '<span class="muted">odkaz zatím nenačten</span>'
+        elif t.get("goout"):  # prodejní formulář GoOut ukazuje mapu sálu rovnou
+            btn = f'<a class="button" href="{html.escape(url)}" target="_blank" rel="noopener">Vstupenky</a>'
         else:
             # Je-li představení v prodeji, dovede na sál oficiální postup sám (viz openHall).
             on_sale = (info or {}).get("on_sale")
@@ -339,7 +421,7 @@ def render(events, urls, seats, months, stale=None):
   <td>{btn}</td>
 </tr>""")
 
-    config = {k: {"server": t["server"], "form": t["form"]} for k, t in THEATRES.items()}
+    config = {k: {"server": t["server"], "form": t["form"]} for k, t in THEATRES.items() if "server" in t}
     links = ", ".join(f'<a href="{t["web"]}" target="_blank" rel="noopener">{t["short"]}</a>' for t in THEATRES.values())
     return f"""<!doctype html>
 <html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -371,7 +453,8 @@ td.num, td.date {{ white-space:nowrap }}
 a {{ color:inherit; text-decoration-color:var(--line) }} a:hover {{ color:var(--accent) }}
 a.detail {{ font-weight:600; text-decoration-color:var(--muted); text-underline-offset:3px }}
 a.detail .ext {{ font-size:12px; margin-left:3px; color:var(--muted); text-decoration:none; display:inline-block }}
-button {{ background:var(--accent); color:#fff; border:0; border-radius:8px; padding:7px 14px; font-weight:600; cursor:pointer }}
+button, a.button {{ background:var(--accent); color:#fff; border:0; border-radius:8px; padding:7px 14px; font-weight:600; cursor:pointer }}
+a.button {{ display:inline-block; text-decoration:none }} a.button:hover {{ color:#fff }}
 .note {{ font-size:13px; color:var(--muted); margin-top:16px }}
 .free {{ display:inline-block; min-width:2.6em; text-align:center; font-weight:700; padding:2px 8px; border-radius:6px }}
 .free.ok {{ color:var(--ok); background:var(--ok-bg) }} .free.low {{ color:var(--low); background:var(--low-bg) }}
@@ -427,7 +510,8 @@ details .cats {{ margin-top:4px; font-size:13px; line-height:1.5 }}
 <p class="note">„Vstupenky“ otevře novou záložku s aktuální mapou sálu v prodejním systému divadla (nejdřív v ní na okamžik otevře představení, pak hned přejde na sál).
 Pokud zůstane na hlášce „Na tuto akci není možné provádět rezervace“, klikni na „Vstupenky“ znovu.
 Před začátkem předprodeje jsou místa vidět, ale nejdou vybrat.
-„Volno“ u MDB a SD UH je počet volných míst, jak ho uvádí web divadla (obnovuje se každou hodinu), u NdB součet volných míst z mapy sálu (obnovuje se zhruba každých 6 hodin).
+U DBP otevře přímo prodej na GoOut s mapou sálu.
+„Volno“ u MDB a SD UH je počet volných míst, jak ho uvádí web divadla, u DBP součet volných míst z mapy sálu (obojí se obnovuje každou hodinu), u NdB součet volných míst z mapy sálu (obnovuje se zhruba každých 6 hodin).
 Ceny jsou základní ceny cenových kategorií, ve kterých jsou ještě volná místa; po rozkliknutí rozpad po kategoriích.</p>
 </main>
 <script>
@@ -522,8 +606,8 @@ def todo_list(events, urls, seats):
     now = datetime.now()
     todo, stale = [], []
     for e in events:
-        if not e["cid"] or e["note"]:
-            continue
+        if not e["cid"] or e["note"] or THEATRES[e["theatre"]].get("goout"):
+            continue  # GoOut: viz goout_halls
         k = key(e)
         info = seats.get(k)
         if k not in urls or not info:
@@ -550,7 +634,7 @@ def fetch_ndb_or_file():
 def main():
     events, stale = [], {}
     programs = json.loads(PROGRAMS.read_text(encoding="utf-8")) if PROGRAMS.exists() else {}
-    for theatre, fetch in (("mdb", fetch_mdb), ("ndb", fetch_ndb_or_file), ("sd", fetch_sd)):
+    for theatre, fetch in (("mdb", fetch_mdb), ("ndb", fetch_ndb_or_file), ("sd", fetch_sd), ("dbp", fetch_dbp)):
         name = THEATRES[theatre]["short"]
         try:
             found = fetch()
@@ -587,6 +671,22 @@ def main():
             seats[k] = {"cap": e["cap"], **hall, "ts": datetime.now().isoformat(timespec="seconds")}
             SEATS.write_text(json.dumps(seats, indent=1), encoding="utf-8")
         time.sleep(1)
+
+    # GoOut vrátí místa pro víc prodejů jedním dotazem, proto pokaždé všechna představení.
+    goout = [e for e in events if THEATRES[e["theatre"]].get("goout") and e["cid"] and not e["note"]]
+    if goout and not os.environ.get("CACHE_ONLY"):
+        try:
+            found = goout_halls(goout)
+        except Exception as ex:  # zůstanou naposledy uložená data
+            print(f"  GoOut: {ex}", flush=True)
+            found = {}
+        now = datetime.now().isoformat(timespec="seconds")
+        for e in goout:
+            if e["cid"] in found:
+                urls[key(e)], hall = found[e["cid"]]
+                seats[key(e)] = {"cap": e["cap"], **hall, "ts": now}
+        CACHE.write_text(json.dumps(urls, indent=1), encoding="utf-8")
+        SEATS.write_text(json.dumps(seats, indent=1), encoding="utf-8")
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(render(events, urls, seats, months, stale), encoding="utf-8")
