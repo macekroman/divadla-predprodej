@@ -2,7 +2,8 @@
 
 Divadla: Městské divadlo Brno (API webu), Národní divadlo Brno a Slovácké divadlo Uherské Hradiště
 (program z HTML webu) prodávají přes systém Colosseum, proto stejný postup pro adresu sálu
-i volná místa. Divadlo Bolka Polívky prodává přes GoOut (program i mapa sálu z API GoOut).
+i volná místa. Divadlo Bolka Polívky, Husa na provázku a HaDivadlo prodávají přes GoOut
+(program i mapa sálu z API GoOut).
 
 Použití:
     python divadla_predprodej.py            # všechna budoucí představení, která už jsou v programu
@@ -47,8 +48,12 @@ THEATRES = {
     "sd": {"name": "Slovácké divadlo", "short": "SD UH", "web": "https://www.slovackedivadlo.cz",
            "server": "https://evstupenky.slovackedivadlo.cz", "prefix": "divadlo", "cap_on_web": True,
            "form": {"mrsid": 1, "language": "cs-CZ", "currency": "CZK"}},
-    # Prodává přes GoOut místo Colossea; "goout" je ID pořadatele.
+    # Prodávají přes GoOut místo Colossea; "goout" je ID pořadatele, "venues" jeho místa patřící divadlu.
     "dbp": {"name": "Divadlo Bolka Polívky", "short": "DBP", "web": "https://divadlobolkapolivky.cz", "goout": 164},
+    "husa": {"name": "Divadlo Husa na provázku", "short": "Husa", "web": "https://www.provazek.cz", "goout": 121,
+             "venues": {"Divadlo Husa na provázku", "Terén"}},  # Terén (CED) je ve stejné budově
+    "hadivadlo": {"name": "HaDivadlo", "short": "HaDivadlo", "web": "https://www.hadivadlo.cz", "goout": 121,
+                  "venues": {"HaDivadlo"}},
 }
 DEFAULT_THEATRE = "mdb"  # předvybrané divadlo ve filtru
 # cap_on_web: počet volných míst uvádí web divadla, mapu sálu stačí načíst při jeho změně.
@@ -192,14 +197,15 @@ def parse_sd_row(b, year):
     }
 
 
-# --- Divadlo Bolka Polívky: program a místa z API GoOut (volá ho i web divadla a prodejní formulář) ---
+# --- Divadla na GoOut: program a místa z API GoOut (volají ho i weby divadel a prodejní formulář) ---
 
 GOOUT = "https://goout.net/services"
 GOOUT_GENRES = {"play": "Činohra", "concerts": "Koncert", "for_children": "Pro děti"}
 
 
-def fetch_dbp():
-    t = THEATRES["dbp"]
+def fetch_goout(theatre):
+    """Představení pořadatele t["goout"]; sdílí-li pořadatele víc divadel, rozliší je t["venues"]."""
+    t = THEATRES[theatre]
     params = [("contactIds[]", t["goout"]), ("languages[]", "cs"), ("hasSale", "true"),
               ("included", "events,sales,venues")]
     schedules, included, scroll = [], {}, None
@@ -211,7 +217,8 @@ def fetch_dbp():
         scroll = d["meta"].get("nextScrollId")
         if not d["data"] or not scroll:
             break
-    web_urls = dbp_web_urls()
+    # DBP nemá v GoOut odkazy na svůj web (sourceUrls), dohledáme je z jeho programu.
+    web_urls = dbp_web_urls() if theatre == "dbp" else {}
     events = []
     for s in schedules:
         a, rel = s["attributes"], s["relationships"]
@@ -221,13 +228,15 @@ def fetch_dbp():
             continue  # bez prodeje, poukázky, skryté a skončené prodeje
         event = included.get(("events", rel["event"]["data"]["id"]))
         venue = included.get(("venues", rel["venue"]["data"]["id"]))
-        # „Divadlo Bolka Polívky – Bílý dům“ → „Bílý dům“
-        stage = venue["attributes"]["locales"]["cs"]["name"] if venue else ""
-        stage = "" if stage == t["name"] else stage.removeprefix(t["name"] + " – ")
+        venue_name = venue["attributes"]["locales"]["cs"]["name"] if venue else ""
+        if "venues" in t and venue_name not in t["venues"]:
+            continue  # jiné divadlo stejného pořadatele
+        # Scéna: „Divadlo Bolka Polívky – Bílý dům“ → „Bílý dům“, samotné divadlo bez scény.
+        stage = "" if venue_name == t["name"] else venue_name.removeprefix(t["name"] + " – ")
         events.append({
-            "theatre": "dbp", "cid": sale["id"], "start": a["startAt"],
+            "theatre": theatre, "cid": sale["id"], "start": a["startAt"],
             "title": event["attributes"]["locales"]["cs"]["name"] if event else "",
-            "url": web_urls.get(a["startAt"][:16]) or a["locales"]["cs"]["siteUrl"],
+            "url": web_urls.get(a["startAt"][:16]) or next(iter(a["sourceUrls"]), None) or a["locales"]["cs"]["siteUrl"],
             "stage": stage, "genre": GOOUT_GENRES.get(event["attributes"]["mainCategory"], "") if event else "",
             "sale": sale["attributes"]["startAt"], "cap": 0 if state == "sold_out" else None,
             "note": {"sold_out": "vyprodáno", "cancelled": "zrušeno"}.get(state),
@@ -251,7 +260,8 @@ def dbp_web_urls():
 
 def goout_halls(events):
     """Prodeje GoOut po 20 najednou. Vrací {id prodeje: (adresa prodeje, místa jako u hall_info)}.
-    U volného sezení (bez mapy sálu) volná místa spočítat nejde, GoOut uvádí jen limit na objednávku."""
+    U volného sezení (bez mapy sálu) volná místa spočítat nejde, GoOut uvádí jen limit na objednávku –
+    pak jsou místo "cats" jen ceny "prices"."""
     found = {}
     for i in range(0, len(events), 20):
         q = urllib.parse.urlencode({"saleIds": ",".join(e["cid"] for e in events[i:i + 20]), "language": "cs"})
@@ -265,7 +275,11 @@ def goout_halls(events):
                     total_free = cats.setdefault(price, [0, 0])
                     total_free[0] += 1
                     total_free[1] += bool(seat["available"])
-            found[sid] = (s["url"], {"cats": cats, "on_sale": s["state"] == "ACTIVE"})
+            # Bez mapy sálu jsou kategorie druhy vstupenek (student, senior, mecenášská…) – stačí základní.
+            basic = [d["priceCents"] // 100 for d in s["deals"].values()
+                     if d["id"] in prices and d["name"].startswith("Základní")]
+            found[sid] = (s["url"], {"cats": cats, "on_sale": s["state"] == "ACTIVE",
+                                     **({} if cats else {"prices": sorted(set(basic) or {int(p) for p in prices.values()})})})
         time.sleep(1)
     return found
 
@@ -347,9 +361,10 @@ def price_range(prices):
 def price_label(info):
     """Rozsah cen, za které jsou ještě volná místa, s rozbalitelným rozpadem po kategoriích."""
     cats = (info or {}).get("cats")
-    if not cats:
-        return '<span class="muted">–</span>'
-    free = [int(p) for p, (_, f) in cats.items() if f]
+    if not cats:  # volné sezení na GoOut: jen ceny, bez počtu míst
+        prices = (info or {}).get("prices")
+        return price_range(prices) if prices else '<span class="muted">–</span>'
+    free =[int(p) for p, (_, f) in cats.items() if f]
     summary = price_range(free) if free else '<span class="muted">nic volného</span>'
     rows = "".join(f"<div>{p}&nbsp;Kč: <b>{f}</b> / {t}</div>"
                    for p, (t, f) in sorted(cats.items(), key=lambda c: -int(c[0])))
@@ -510,8 +525,8 @@ details .cats {{ margin-top:4px; font-size:13px; line-height:1.5 }}
 <p class="note">„Vstupenky“ otevře novou záložku s aktuální mapou sálu v prodejním systému divadla (nejdřív v ní na okamžik otevře představení, pak hned přejde na sál).
 Pokud zůstane na hlášce „Na tuto akci není možné provádět rezervace“, klikni na „Vstupenky“ znovu.
 Před začátkem předprodeje jsou místa vidět, ale nejdou vybrat.
-U DBP otevře přímo prodej na GoOut s mapou sálu.
-„Volno“ u MDB a SD UH je počet volných míst, jak ho uvádí web divadla, u DBP součet volných míst z mapy sálu (obojí se obnovuje každou hodinu), u NdB součet volných míst z mapy sálu (obnovuje se zhruba každých 6 hodin).
+U DBP, Husy na provázku a HaDivadla otevře přímo prodej na GoOut.
+„Volno“ u MDB a SD UH je počet volných míst, jak ho uvádí web divadla, u DBP součet volných míst z mapy sálu (obojí se obnovuje každou hodinu), u NdB součet volných míst z mapy sálu (obnovuje se zhruba každých 6 hodin). Husa na provázku a HaDivadlo nemají místenky, GoOut u nich počet volných míst neuvádí.
 Ceny jsou základní ceny cenových kategorií, ve kterých jsou ještě volná místa; po rozkliknutí rozpad po kategoriích.</p>
 </main>
 <script>
@@ -634,7 +649,9 @@ def fetch_ndb_or_file():
 def main():
     events, stale = [], {}
     programs = json.loads(PROGRAMS.read_text(encoding="utf-8")) if PROGRAMS.exists() else {}
-    for theatre, fetch in (("mdb", fetch_mdb), ("ndb", fetch_ndb_or_file), ("sd", fetch_sd), ("dbp", fetch_dbp)):
+    fetchers = [("mdb", fetch_mdb), ("ndb", fetch_ndb_or_file), ("sd", fetch_sd)]
+    fetchers += [(k, lambda k=k: fetch_goout(k)) for k, t in THEATRES.items() if "goout" in t]
+    for theatre, fetch in fetchers:
         name = THEATRES[theatre]["short"]
         try:
             found = fetch()

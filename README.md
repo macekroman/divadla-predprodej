@@ -2,8 +2,8 @@
 
 Neoficiální rozcestník: seznam představení Městského divadla Brno, Národního divadla Brno
 a Slováckého divadla Uherské Hradiště s počtem volných míst, cenami a tlačítkem, které otevře mapu sálu v prodejním systému Colosseum –
-i u představení, jejichž předprodej ještě nezačal. Divadlo Bolka Polívky prodává přes GoOut, tlačítko
-tam otevře jeho prodejní formulář s mapou sálu. Nákup probíhá výhradně na webech divadel a GoOut.
+i u představení, jejichž předprodej ještě nezačal. Divadlo Bolka Polívky, Divadlo Husa na provázku
+a HaDivadlo prodávají přes GoOut, tlačítko tam otevře jeho prodejní formulář. Nákup probíhá výhradně na webech divadel a GoOut.
 
 ## Jak to funguje
 
@@ -19,6 +19,9 @@ tam otevře jeho prodejní formulář s mapou sálu. Nákup probíhá výhradně
   (u každého místa `dealId` a `available`, až 20 prodejů jedním dotazem – proto se obnovují každou hodinu
   všechna). Skryté kategorie (přístavky, blokace) se nepočítají. Odkaz na popis vede na stránku
   představení na webu divadla, dohledanou podle data a času.
+- Divadlo Husa na provázku a HaDivadlo (GoOut, společný pořadatel CED 121, rozlišené podle místa;
+  scéna Terén je v budově Husy): stejné API jako DBP, odkaz na popis z `sourceUrls`. Prodávají bez
+  místenek, takže GoOut počet volných míst neuvádí – jen vyprodáno a základní vstupné.
 - Tlačítko „Koupit vstupenky“ na webu posílá POST na `https://server.mdb.cz/hall` (`mrsid=1`, `eventid`).
   Session si pak pamatuje představení a `/mdb/standard/Hall/PrepareDetail` vrátí adresu sálu
   `Hall/Index/<id>/<token>`. Token je pro představení stálý, proto se ukládá do `hall_urls.json`.
