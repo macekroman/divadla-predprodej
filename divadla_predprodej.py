@@ -51,7 +51,7 @@ THEATRES = {
     # Prodávají přes GoOut místo Colossea; "goout" je ID pořadatele, "venues" jeho místa patřící divadlu.
     "dbp": {"name": "Divadlo Bolka Polívky", "short": "DBP", "web": "https://divadlobolkapolivky.cz", "goout": 164},
     "husa": {"name": "Divadlo Husa na provázku", "short": "Husa", "web": "https://www.provazek.cz", "goout": 121,
-             "venues": {"Divadlo Husa na provázku", "Terén"}},  # Terén (CED) je ve stejné budově
+             "venues": {"Divadlo Husa na provázku"}},
     "hadivadlo": {"name": "HaDivadlo", "short": "HaDivadlo", "web": "https://www.hadivadlo.cz", "goout": 121,
                   "venues": {"HaDivadlo"}},
 }
@@ -241,7 +241,32 @@ def fetch_goout(theatre):
             "sale": sale["attributes"]["startAt"], "cap": 0 if state == "sold_out" else None,
             "note": {"sold_out": "vyprodáno", "cancelled": "zrušeno"}.get(state),
         })
+    if theatre == "husa":  # scény (provázek.sál, provázek.sklep…) má v GoOut jen málokteré představení
+        stages = husa_stages(sorted({e["start"][:7] for e in events}))
+        for e in events:
+            e["stage"] = stages.get(e["start"][:16], "")
     return events
+
+
+def husa_stages(months):
+    """Scény představení z programu na webu Husy podle začátku (bez představení, která začínají současně).
+    Web je v Next.js, program měsíce je ve stránce jako data: … "date":"2026-11-02" … "stage":[{"_key":"cs",
+    "value":"provázek.sál"}],"time":"18:30"."""
+    found = {}
+    for ym in months:
+        try:
+            page = opener().open(f'{THEATRES["husa"]["web"]}/program/{ym}', timeout=30).read().decode("utf-8", "replace")
+        except Exception as ex:  # scény pak zůstanou prázdné
+            print(f"  Husa: program {ym} na webu nedostupný ({ex})", flush=True)
+            continue
+        page = page.replace('\\"', '"')
+        days = [(m.start(), m.group(1)) for m in re.finditer(r'"date":"(\d{4}-\d\d-\d\d)"', page)]
+        for m in re.finditer(r'"stage":\[\{"_key":"cs","value":"([^"]*)"\}[^\]]*\],"time":"(\d\d:\d\d)"', page):
+            day = next((d for pos, d in reversed(days) if pos < m.start()), None)  # datum termínu je před scénou
+            if day:
+                found.setdefault(f"{day}T{m.group(2)}", set()).add(m.group(1))
+        time.sleep(1)
+    return {k: v.pop() for k, v in found.items() if len(v) == 1}
 
 
 def dbp_web_urls():

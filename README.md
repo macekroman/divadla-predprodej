@@ -20,8 +20,10 @@ a HaDivadlo prodávají přes GoOut, tlačítko tam otevře jeho prodejní formu
   všechna). Skryté kategorie (přístavky, blokace) se nepočítají. Odkaz na popis vede na stránku
   představení na webu divadla, dohledanou podle data a času.
 - Divadlo Husa na provázku a HaDivadlo (GoOut, společný pořadatel CED 121, rozlišené podle místa;
-  scéna Terén je v budově Husy): stejné API jako DBP, odkaz na popis z `sourceUrls`. Prodávají bez
-  místenek, takže GoOut počet volných míst neuvádí – jen vyprodáno a základní vstupné.
+  Terén téhož pořadatele vynechán): stejné API jako DBP, odkaz na popis z `sourceUrls`. Prodávají bez
+  místenek, takže GoOut počet volných míst neuvádí – jen vyprodáno a základní vstupné. Scény Husy
+  (provázek.sál, provázek.sklep…) jsou z programu na webu `https://www.provazek.cz/program/RRRR-MM`
+  (data Next.js ve stránce), spárované podle data a času.
 - Tlačítko „Koupit vstupenky“ na webu posílá POST na `https://server.mdb.cz/hall` (`mrsid=1`, `eventid`).
   Session si pak pamatuje představení a `/mdb/standard/Hall/PrepareDetail` vrátí adresu sálu
   `Hall/Index/<id>/<token>`. Token je pro představení stálý, proto se ukládá do `hall_urls.json`.
