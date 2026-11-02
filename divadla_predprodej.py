@@ -40,7 +40,7 @@ PROGRAMS = Path(__file__).with_name("programs.json")  # poslední úspěšně na
 # Pole "form" odpovídají formuláři, který posílá tlačítko „Koupit vstupenky“ na webu divadla.
 THEATRES = {
     "mdb": {"name": "Městské divadlo Brno", "short": "MDB", "web": "https://www.mdb.cz",
-            "server": "https://server.mdb.cz", "prefix": "mdb", "cap_on_web": True,
+            "server": "https://server.mdb.cz", "prefix": "mdb", "map_every_run": True,
             "form": {"mrsid": 1, "language": "cs", "currency": "CZK"}},
     "ndb": {"name": "Národní divadlo Brno", "short": "NdB", "web": "https://www.ndbrno.cz",
             "server": "https://online.colosseum.eu", "prefix": "ndbrno",
@@ -57,6 +57,7 @@ THEATRES = {
 }
 DEFAULT_THEATRE = "mdb"  # předvybrané divadlo ve filtru
 # cap_on_web: počet volných míst uvádí web divadla, mapu sálu stačí načíst při jeho změně.
+# map_every_run: číslo z webu se s mapou sálu rozchází (MDB), platí mapa a načítá se při každém běhu.
 # Ostatním (NdB) mapu sálu obnovujeme podle stáří.
 NDB_REFRESH = timedelta(hours=6)
 NDB_REFRESH_PER_RUN = 60
@@ -397,11 +398,12 @@ def price_label(info):
 
 
 def free_count(e, info):
-    """MDB a SD UH: číslo z webu divadla. NdB: součet volných míst z mapy sálu."""
-    if e["cap"] is not None or e["theatre"] == "mdb":
+    """Číslo z programu (SD UH, vyprodáno), jinak součet volných míst z mapy sálu. U MDB má přednost mapa,
+    kromě představení mimo prodej – těm se mapa neobnovuje."""
+    if e["cap"] is not None and (e["note"] or not THEATRES[e["theatre"]].get("map_every_run")):
         return e["cap"]
     cats = (info or {}).get("cats")
-    return sum(f for _, f in cats.values()) if cats else None
+    return sum(f for _, f in cats.values()) if cats else e["cap"]
 
 
 def select(group, all_label, options, default=""):
@@ -551,7 +553,7 @@ details .cats {{ margin-top:4px; font-size:13px; line-height:1.5 }}
 Pokud zůstane na hlášce „Na tuto akci není možné provádět rezervace“, klikni na „Vstupenky“ znovu.
 Před začátkem předprodeje jsou místa vidět, ale nejdou vybrat.
 U DBP, Husy na provázku a HaDivadla otevře přímo prodej na GoOut.
-„Volno“ u MDB a SD UH je počet volných míst, jak ho uvádí web divadla, u DBP součet volných míst z mapy sálu (obojí se obnovuje každou hodinu), u NdB součet volných míst z mapy sálu (obnovuje se zhruba každých 6 hodin). Husa na provázku a HaDivadlo nemají místenky, GoOut u nich počet volných míst neuvádí.
+„Volno“ u SD UH je počet volných míst, jak ho uvádí web divadla, u MDB a DBP součet volných míst z mapy sálu (obnovuje se při každé aktualizaci stránky), u NdB součet volných míst z mapy sálu (obnovuje se zhruba každých 6 hodin). Husa na provázku a HaDivadlo nemají místenky, GoOut u nich počet volných míst neuvádí.
 Ceny jsou základní ceny cenových kategorií, ve kterých jsou ještě volná místa; po rozkliknutí rozpad po kategoriích.</p>
 </main>
 <script>
@@ -641,7 +643,7 @@ setMonth(location.hash.slice(1));
 # --- hlavní běh ---
 
 def todo_list(events, urls, seats):
-    """Představení, u kterých je potřeba načíst sál: nová, u MDB a SD UH se změnou počtu volných míst podle webu,
+    """Představení, u kterých je potřeba načíst sál: nová, u MDB všechna, u SD UH se změnou počtu volných míst podle webu,
     u NdB s mapou starší než NDB_REFRESH (nejstarší napřed, nejvýš NDB_REFRESH_PER_RUN)."""
     now = datetime.now()
     todo, stale = [], []
@@ -650,7 +652,7 @@ def todo_list(events, urls, seats):
             continue  # GoOut: viz goout_halls
         k = key(e)
         info = seats.get(k)
-        if k not in urls or not info:
+        if k not in urls or not info or THEATRES[e["theatre"]].get("map_every_run"):
             todo.append(e)
         elif THEATRES[e["theatre"]].get("cap_on_web"):
             if info.get("cap") != e["cap"]:

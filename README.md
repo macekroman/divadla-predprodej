@@ -7,8 +7,8 @@ a HaDivadlo prodávají přes GoOut, tlačítko tam otevře jeho prodejní formu
 
 ## Jak to funguje
 
-- MDB: seznam představení se bere z API webu `https://www.mdb.cz/api/event/events`
-  (včetně počtu volných míst `availableCapacity`).
+- MDB: seznam představení se bere z API webu `https://www.mdb.cz/api/event/events`. Volná místa se počítají
+  z mapy sálu, která se načítá při každém běhu – `availableCapacity` z API se s mapou rozchází (i o desítky míst).
 - NdB: program se čte z HTML stránek `https://www.ndbrno.cz/program/?month=M&years=R`;
   z formuláře „Vstupenky“ se bere `eventid` (prodejní systém `online.colosseum.eu`, `mrsid=83`).
 - Slovácké divadlo: celý program je na stránce `https://www.slovackedivadlo.cz/program` (rok z nadpisů
