@@ -1,3 +1,9 @@
 divadla_predprodej.html
 site/
 __pycache__/
+# data uložená mezi běhy na serveru
+hall_urls.json
+seats.json
+programs.json
+ndb_program.json
+.aktualizace.lock
