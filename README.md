@@ -37,15 +37,15 @@ python divadla_predprodej.py            # všechna budoucí představení v prog
 python divadla_predprodej.py 2026-12    # konkrétní měsíc
 ```
 
-Uložená data jsou ve větvi `data`; bez nich skript načte všechny sály znovu. Stáhnout jdou takto:
-
-```
-git fetch origin data && git checkout origin/data -- . && git restore --staged .
-```
+Uložená data (`hall_urls.json`, `seats.json`, `programs.json`) jsou na domácím serveru
+v `~/divadla-predprodej`; bez nich skript načte všechny sály znovu.
 
 ## Zveřejnění
 
-GitHub Actions (`.github/workflows/pages.yml`) stránku každou hodinu přegeneruje (včetně počtu volných míst z API webu), uloží nové
-adresy sálů, volná místa a program do větve `data` (jediný commit, který se pokaždé přepíše,
-ať nezanáší historii `main`) a nasadí ji na GitHub Pages. Spustit ručně jde přes záložku Actions
-→ „Aktualizace stránky“ → Run workflow.
+Stránku každou hodinu přegeneruje domácí server: cron spouští `aktualizace.sh`, který stáhne
+nový kód z `main`, spustí skript a hotovou stránku nahraje do větve `gh-pages` (jediný commit,
+který se pokaždé přepíše). GitHub Pages zveřejňuje přímo tuto větev. Na serveru web NdB
+neblokuje dotazy jako u GitHub Actions a data mezi běhy zůstávají na disku.
+
+Ručně se běh spustí na serveru příkazem `~/divadla-predprodej/aktualizace.sh`. Výstup posledního
+běhu je v `~/divadla-predprodej.log`, výsledek hlídá Healthchecks (adresa v `~/.hc-divadla`).
