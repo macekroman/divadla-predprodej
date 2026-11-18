@@ -1,7 +1,7 @@
 # Divadla – sály a volná místa
 
-Neoficiální rozcestník: seznam představení Městského divadla Brno, Národního divadla Brno
-a Slováckého divadla Uherské Hradiště s počtem volných míst, cenami a tlačítkem, které otevře mapu sálu v prodejním systému Colosseum –
+Neoficiální rozcestník: seznam představení Městského divadla Brno, Národního divadla Brno,
+Slováckého divadla Uherské Hradiště a Jihočeského divadla s počtem volných míst, cenami a tlačítkem, které otevře mapu sálu v prodejním systému Colosseum –
 i u představení, jejichž předprodej ještě nezačal. Divadlo Bolka Polívky, Divadlo Husa na provázku
 a HaDivadlo prodávají přes GoOut, tlačítko tam otevře jeho prodejní formulář. Nákup probíhá výhradně na webech divadel a GoOut.
 
@@ -14,6 +14,9 @@ a HaDivadlo prodávají přes GoOut, tlačítko tam otevře jeho prodejní formu
 - Slovácké divadlo: celý program je na stránce `https://www.slovackedivadlo.cz/program` (rok z nadpisů
   měsíců, počet volných míst z popisku „Zbývá N vstupenek z M“); prodejní systém
   `evstupenky.slovackedivadlo.cz` (`mrsid=1`, cesta `/divadlo/standard/Hall/...`).
+- Jihočeské divadlo: celý program je v kalendáři na hlavní stránce `https://www.jihoceskedivadlo.cz`
+  (datum bez roku, tlačítko Hlídací pes znamená vyprodáno); prodejní systém `vstupenky.cbsystem.cz`
+  (`mrsid=4`, cesta `/jihoceske-divadlo/standard/Hall/...`).
 - Divadlo Bolka Polívky (GoOut, pořadatel 164): program z `https://goout.net/services/entities/v2/schedules`
   (stejné API volá web divadla), místa podle cenových kategorií z `https://goout.net/services/feeder/v3/sales`
   (u každého místa `dealId` a `available`, až 20 prodejů jedním dotazem – proto se obnovují každou hodinu
