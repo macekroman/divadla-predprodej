@@ -1,9 +1,9 @@
 # Divadla – sály a volná místa
 
 Neoficiální rozcestník: seznam představení Městského divadla Brno, Národního divadla Brno,
-Slováckého divadla Uherské Hradiště, Jihočeského divadla a Hudebního divadla Karlín
+Slováckého divadla Uherské Hradiště, Jihočeského divadla, Hudebního divadla Karlín a Divadla J. K. Tyla Plzeň
 s počtem volných míst, cenami a tlačítkem, které otevře mapu sálu v prodejním systému Colosseum –
-i u představení, jejichž předprodej ještě nezačal. Divadlo Bolka Polívky, Divadlo Husa na provázku
+i u představení, jejichž předprodej ještě nezačal (kromě DJKT). Divadlo Bolka Polívky, Divadlo Husa na provázku
 a HaDivadlo prodávají přes GoOut, tlačítko tam otevře jeho prodejní formulář. Nákup probíhá výhradně na webech divadel a GoOut.
 
 ## Jak to funguje
@@ -22,6 +22,13 @@ a HaDivadlo prodávají přes GoOut, tlačítko tam otevře jeho prodejní formu
   `Referer` odpoví 403); `prdid` je `eventid` v Colosseu, `available` počet volných míst, jak ho ukazuje web
   (mapa sálu se proto načítá jen při jeho změně). Prodejní systém `vstupenky.hdk.cz` (`mrsid=256`, cesta
   `/hudebnidivadlokarlin/standard/Hall/...`).
+- Divadlo J. K. Tyla Plzeň: celý program je na stránce `https://www.djkt.eu/program` (měsíce `id="month-RRRR-MM"`,
+  soubor ze třídy `ensemble-…`, „Posledních N vstupenek“ jako počet volných míst). Prodává přes novější verzi
+  Colossea (Plzeňská vstupenka, `rezervace.plzenskavstupenka.cz`, `mrsid=6`): představení má stálou adresu
+  `/Hall/Event?eventId=…&mrsid=6`, na kterou vede tlačítko přímo, a mapu sálu vrací `/Hall/GetHall?eventId=…`
+  (s hlavičkou `X-Requested-With`, ve stejné session). Cenu nese jen volné místo, kategorie bez volných míst
+  proto v rozpadu cen chybí. Velké sály mohou být rozdělené na sektory (načítají se po jednom), foyer bývá
+  bez místenek (jen ceny). Představení před začátkem předprodeje nemají na webu ID akce, takže u nich odkaz chybí.
 - Divadlo Bolka Polívky (GoOut, pořadatel 164): program z `https://goout.net/services/entities/v2/schedules`
   (stejné API volá web divadla), místa podle cenových kategorií z `https://goout.net/services/feeder/v3/sales`
   (u každého místa `dealId` a `available`, až 20 prodejů jedním dotazem – proto se obnovují každou hodinu

@@ -2,7 +2,8 @@
 
 Divadla: Městské divadlo Brno a Hudební divadlo Karlín (API webu), Národní divadlo Brno, Slovácké divadlo
 Uherské Hradiště a Jihočeské divadlo (program z HTML webu) prodávají přes systém Colosseum, proto stejný postup
-pro adresu sálu i volná místa. Divadlo Bolka Polívky, Husa na provázku
+pro adresu sálu i volná místa. Divadlo J. K. Tyla Plzeň prodává přes novější verzi Colossea (Plzeňská vstupenka),
+kde má každé představení stálou adresu a mapa sálu se načítá jinak. Divadlo Bolka Polívky, Husa na provázku
 a HaDivadlo prodávají přes GoOut (program i mapa sálu z API GoOut).
 
 Použití:
@@ -54,6 +55,9 @@ THEATRES = {
     "hdk": {"name": "Hudební divadlo Karlín", "short": "HDK", "web": "https://www.hdk.cz",
             "server": "https://vstupenky.hdk.cz", "prefix": "hudebnidivadlokarlin", "cap_on_web": True,
             "form": {"mrsid": 256, "language": "cs-CZ"}},
+    # Plzeňská vstupenka: představení má stálou adresu Hall/Event, mapa sálu z Hall/GetHall (viz websale_hall_info).
+    "djkt": {"name": "Divadlo J. K. Tyla", "short": "DJKT", "web": "https://www.djkt.eu",
+             "websale": "https://rezervace.plzenskavstupenka.cz", "mrsid": 6},
     # Prodávají přes GoOut místo Colossea; "goout" je ID pořadatele, "venues" jeho místa patřící divadlu.
     "dbp": {"name": "Divadlo Bolka Polívky", "short": "DBP", "web": "https://divadlobolkapolivky.cz", "goout": 164},
     "husa": {"name": "Divadlo Husa na provázku", "short": "Husa", "web": "https://www.provazek.cz", "goout": 121,
@@ -265,6 +269,53 @@ def fetch_hdk():
     return events
 
 
+# --- Divadlo J. K. Tyla Plzeň: celý program na jedné stránce, po měsících ---
+
+DJKT_GENRES = {"muzikal": "Muzikál", "cinohra": "Činohra", "opera": "Opera", "balet": "Balet"}
+
+
+def fetch_djkt():
+    page = opener().open(f'{THEATRES["djkt"]["web"]}/program', timeout=60).read().decode("utf-8", "replace")
+    events = {}
+    # Měsíce: <… id="month-2026-11">, v nich představení <div class="row ensemble-muzikal" >
+    for ym, part in re.findall(r'id="month-(\d{4}-\d\d)"(.*?)(?=id="month-\d{4}-\d\d"|$)', page, re.S):
+        for block in re.split(r'<div class="row ensemble-', part)[1:]:
+            e = parse_djkt_block(block, ym[:4])
+            if e:
+                events[e["cid"] or (e["title"], e["start"])] = e
+    return list(events.values())
+
+
+def parse_djkt_block(b, year):
+    when = re.search(r'class="date">(\d{1,2})\. (\d{1,2})\.', b)
+    title = re.search(r"<h3>(.*?)</h3>", b, re.S)
+    hhmm = re.search(r"(\d\d):(\d\d)(?:&ndash;\d\d:\d\d)?\s*<strong>(.*?)</strong>", b, re.S)
+    if not when or not title or not hhmm:
+        return None
+    cid = re.search(r"/Hall/Event\?eventId=(\d+)&(?:amp;)?mrsid=6", b)
+    tickets = re.search(r'class="tickets[^>]*>(.*?)</div>', b, re.S)
+    tickets = text(tickets.group(1)) if tickets else ""
+    # Před začátkem prodeje: „Vstupenky v prodeji od 7. 12. 2026 10:00“ (ID akce na webu ještě není).
+    sale = re.search(r"v&nbsp;prodeji\s*<nobr>od (\d{1,2})\. (\d{1,2})\. (\d{4}) (\d\d):(\d\d)", b)
+    sold_out = tickets == "vyprodáno"
+    if not cid and not sold_out and not sale:
+        return None  # zadaná představení, lektorské úvody, prohlídky, akce bez vstupenek
+    d, mo = when.groups()
+    # „Posledních 12 vstupenek“, „Poslední vstupenka“, „0 volných, 2 rezervace“; jinak web počet neuvádí.
+    left = re.match(r"(?:Posledn(?:í|ích) (\d+) vstup|(0) volných|(Poslední vstupenka))", tickets)
+    cap = 0 if sold_out else (int(left.group(1) or left.group(2) or 1) if left else None)
+    genre = re.match(r"([a-z]+)", b)
+    url = re.search(r'href="([^"]+)"', title.group(1))
+    return {
+        "theatre": "djkt", "cid": cid.group(1) if cid else None,
+        "start": f"{year}-{int(mo):02}-{int(d):02}T{hhmm.group(1)}:{hhmm.group(2)}:00",
+        "title": text(title.group(1)), "url": urllib.parse.urljoin(THEATRES["djkt"]["web"] + "/", url.group(1)) if url else THEATRES["djkt"]["web"],
+        "stage": text(hhmm.group(3)), "genre": DJKT_GENRES.get(genre.group(1) if genre else "", ""),
+        "sale": "{2}-{1:0>2}-{0:0>2}T{3}:{4}:00".format(*sale.groups()) if sale else None, "cap": cap,
+        "note": "vyprodáno" if sold_out else (None if cid else "prodej zatím nezačal"),
+    }
+
+
 # --- Divadla na GoOut: program a místa z API GoOut (volají ho i weby divadel a prodejní formulář) ---
 
 GOOUT = "https://goout.net/services"
@@ -384,6 +435,8 @@ def hall_info(theatre, cid, url=None):
     ještě neznáme) a z mapy sálu spočítá místa v cenových kategoriích.
     Vrací (url, {"cats": {cena: [míst celkem, volných]}, "on_sale": bool})."""
     t = THEATRES[theatre]
+    if "websale" in t:
+        return websale_hall_info(t, cid)
     server, base = t["server"], f'{t["server"]}/{t["prefix"]}/standard/Hall'
     o = opener()
     o.open(f"{server}/hall", urllib.parse.urlencode({**t["form"], "eventid": cid}).encode(), timeout=15).read()
@@ -412,6 +465,42 @@ def hall_info(theatre, cid, url=None):
         total_free[0] += 1
         total_free[1] += "occupied" not in state
     return url, {"cats": cats, "on_sale": "Akce není v prodeji" not in page}
+
+
+def websale_hall_info(t, cid):
+    """Plzeňská vstupenka: adresa představení je stálá (otevře ji i odkaz), mapu sálu vrací Hall/GetHall
+    v rámci session založené touto stránkou. Velký sál může být rozdělený na sektory (načtou se po jednom),
+    malé sály bývají bez místenek – pak jsou jen ceny jako u volného sezení na GoOut."""
+    url = f'{t["websale"]}/Hall/Event?eventId={cid}&mrsid={t["mrsid"]}'
+    o = opener()
+    page = o.open(url, timeout=15).read().decode("utf-8", "replace")
+    on_sale = not re.search(r'id="HallReadOnly"[^>]*value="true"', page)
+
+    def get_hall(section=""):
+        req = urllib.request.Request(f'{t["websale"]}/Hall/GetHall?eventId={cid}&sectionId={section}&venueId=0',
+                                     headers={"X-Requested-With": "XMLHttpRequest"})
+        return o.open(req, timeout=15).read().decode("utf-8", "replace")
+
+    hall = get_hall()
+    # Sektory: <g class="section" data-section-id="105681" data-section-type="STD" …>; NON je na stání.
+    sections = re.findall(r'<g class="section" data-section-id="([-\d]+)" data-section-type="STD"', hall)
+    halls = [hall] if not sections else [get_hall(s) for s in sections]
+    # Místo: <g class="seat free ckt_6 cktIdx_8" … data-full-price="280,0" data-ckt-id="6"> nebo
+    # <g class="seat unavailable" data-ticket-id="…" data-ckt-id="7"> – cenu nese jen volné místo.
+    seats = [(state, dict(re.findall(r'data-(ckt-id|full-price)="([^"]*)"', attrs)))
+             for h in halls for state, attrs in re.findall(r'<g class="seat (\w+)[^"]*"([^>]*)>', h)]
+    price = {s["ckt-id"]: s["full-price"].split(",")[0] for _, s in seats if "full-price" in s and "ckt-id" in s}
+    cats = {}
+    for state, s in seats:
+        p = price.get(s.get("ckt-id"))
+        if p:  # kategorie bez jediného volného místa nemají známou cenu, vynechají se
+            total_free = cats.setdefault(p, [0, 0])
+            total_free[0] += 1
+            total_free[1] += state == "free"
+    if not seats and not sections:  # bez místenek: <span class="tour-row__price"> 50,00 Kč</span>
+        prices = {int(p) for p in re.findall(r'tour-row__price">\s*(\d+)', hall)}
+        return url, {"cats": {}, "on_sale": on_sale, **({"prices": sorted(prices)} if prices else {})}
+    return url, {"cats": cats, "on_sale": on_sale}
 
 
 def safe_hall_info(theatre, cid, url=None, attempts=4):
@@ -507,7 +596,7 @@ def render(events, urls, seats, months, stale=None):
             btn = f'<span class="muted">{e["note"]}</span>'
         elif not url:
             btn = '<span class="muted">odkaz zatím nenačten</span>'
-        elif t.get("goout"):  # prodejní formulář GoOut ukazuje mapu sálu rovnou
+        elif t.get("goout") or t.get("websale"):  # prodejní formulář GoOut i Plzeňské vstupenky ukazuje mapu sálu rovnou
             btn = f'<a class="button" href="{html.escape(url)}" target="_blank" rel="noopener">Vstupenky</a>'
         else:
             # Je-li představení v prodeji, dovede na sál oficiální postup sám (viz openHall).
@@ -619,8 +708,8 @@ details .cats {{ margin-top:4px; font-size:13px; line-height:1.5 }}
 <p class="note">„Vstupenky“ otevře novou záložku s aktuální mapou sálu v prodejním systému divadla (nejdřív v ní na okamžik otevře představení, pak hned přejde na sál).
 Pokud zůstane na hlášce „Na tuto akci není možné provádět rezervace“, klikni na „Vstupenky“ znovu.
 Před začátkem předprodeje jsou místa vidět, ale nejdou vybrat.
-U DBP, Husy na provázku a HaDivadla otevře přímo prodej na GoOut.
-„Volno“ u SD UH a HDK je počet volných míst, jak ho uvádí web divadla, u MDB a DBP součet volných míst z mapy sálu (obnovuje se při každé aktualizaci stránky), u NdB a JD součet volných míst z mapy sálu (obnovuje se zhruba každých 6 hodin). Husa na provázku a HaDivadlo nemají místenky, GoOut u nich počet volných míst neuvádí.
+U DJKT otevře přímo představení v prodeji Plzeňské vstupenky (u představení, jejichž předprodej ještě nezačal, odkaz web divadla zatím nemá), u DBP, Husy na provázku a HaDivadla přímo prodej na GoOut.
+„Volno“ u SD UH a HDK je počet volných míst, jak ho uvádí web divadla, u MDB a DBP součet volných míst z mapy sálu (obnovuje se při každé aktualizaci stránky), u NdB, JD a DJKT součet volných míst z mapy sálu (obnovuje se zhruba každých 6 hodin; u DJKT má přednost „Posledních N vstupenek“ z webu). Husa na provázku a HaDivadlo nemají místenky, GoOut u nich počet volných míst neuvádí.
 Ceny jsou základní ceny cenových kategorií, ve kterých jsou ještě volná místa; po rozkliknutí rozpad po kategoriích.</p>
 </main>
 <script>
@@ -744,7 +833,7 @@ def main():
     events, stale = [], {}
     programs = json.loads(PROGRAMS.read_text(encoding="utf-8")) if PROGRAMS.exists() else {}
     fetchers = [("mdb", fetch_mdb), ("ndb", fetch_ndb_or_file), ("sd", fetch_sd), ("jd", fetch_jd),
-                ("hdk", fetch_hdk)]
+                ("hdk", fetch_hdk), ("djkt", fetch_djkt)]
     fetchers += [(k, lambda k=k: fetch_goout(k)) for k, t in THEATRES.items() if "goout" in t]
     for theatre, fetch in fetchers:
         name = THEATRES[theatre]["short"]
