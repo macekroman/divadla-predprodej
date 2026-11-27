@@ -1,7 +1,7 @@
 """Vygeneruje HTML přehled představení divadel s proklikem přímo na mapu sálu.
 
 Divadla: Městské divadlo Brno a Hudební divadlo Karlín (API webu), Národní divadlo Brno, Slovácké divadlo
-Uherské Hradiště a Jihočeské divadlo (program z HTML webu) prodávají přes systém Colosseum, proto stejný postup
+Uherské Hradiště, Jihočeské divadlo a Národní divadlo moravskoslezské (program z HTML webu) prodávají přes systém Colosseum, proto stejný postup
 pro adresu sálu i volná místa. Divadlo J. K. Tyla Plzeň prodává přes novější verzi Colossea (Plzeňská vstupenka),
 kde má každé představení stálou adresu a mapa sálu se načítá jinak. Divadlo Bolka Polívky, Husa na provázku
 a HaDivadlo prodávají přes GoOut (program i mapa sálu z API GoOut).
@@ -58,6 +58,8 @@ THEATRES = {
     # Plzeňská vstupenka: představení má stálou adresu Hall/Event, mapa sálu z Hall/GetHall (viz websale_hall_info).
     "djkt": {"name": "Divadlo J. K. Tyla", "short": "DJKT", "web": "https://www.djkt.eu",
              "websale": "https://rezervace.plzenskavstupenka.cz", "mrsid": 6},
+    "ndm": {"name": "Národní divadlo moravskoslezské", "short": "NDM", "web": "https://www.ndm.cz",
+            "server": "https://prodej.ndm.cz", "prefix": "ndm", "form": {"mrsid": 114, "language": "cs-CZ"}},
     # Prodávají přes GoOut místo Colossea; "goout" je ID pořadatele, "venues" jeho místa patřící divadlu.
     "dbp": {"name": "Divadlo Bolka Polívky", "short": "DBP", "web": "https://divadlobolkapolivky.cz", "goout": 164},
     "husa": {"name": "Divadlo Husa na provázku", "short": "Husa", "web": "https://www.provazek.cz", "goout": 121,
@@ -316,6 +318,50 @@ def parse_djkt_block(b, year):
     }
 
 
+# --- Národní divadlo moravskoslezské: celá zveřejněná část sezóny na jedné stránce ---
+# Scéna v programu není, doplní se z mapy sálu (viz hall_info).
+
+NDM_GENRES = {"Činohra": "Činohra", "Muzikál": "Muzikál", "Opera": "Opera", "Balet": "Balet",
+              "Opereta / Muzikál": "Opereta / Muzikál"}
+
+
+def fetch_ndm():
+    page = opener().open(f'{THEATRES["ndm"]["web"]}/cz/program/aktualni-mesic/', timeout=60).read().decode("utf-8", "replace")
+    events = {}
+    # Stránka má program dvakrát (dva výpisy), proto podle ID akce.
+    for row in re.split(r'<div class="program-row">', page)[1:]:
+        day = re.search(r'class="program-date" id="(\d{4}-\d\d-\d\d)"', row)
+        if not day:
+            continue
+        for item in re.split(r'<div class="program-item ', row)[1:]:
+            e = parse_ndm_item(item, day.group(1))
+            if e:
+                events[e["cid"] or (e["title"], e["start"])] = e
+    return list(events.values())
+
+
+def parse_ndm_item(b, day):
+    title = re.search(r'class="program-item-title"><a href="([^"]+)"[^>]*>(.*?)</a>', b, re.S)
+    hhmm = re.search(r'class="program-item-time">\s*(\d{1,2}):(\d\d)', b)
+    if not title or not hhmm:
+        return None
+    # Každé představení má dva formuláře: Vstupenky (mrsid 114) a Moje ABO (168, abonentní systém).
+    cid = re.search(r'name="mrsid" value="114" />\s*<input type="hidden" name="eventid" value="(\d+)"', b)
+    sold_out = b.startswith("program-vyprodano")
+    cancelled = b.startswith("program-zruseno")
+    not_yet = "PRODEJ VSTUPENEK NEZAH" in b
+    if not cid and not (sold_out or cancelled or not_yet):
+        return None  # zadaná představení, prohlídky, akce bez vstupenek
+    genre = re.search(r'class="program-item-type">(.*?)</div>', b, re.S)
+    return {
+        "theatre": "ndm", "cid": cid.group(1) if cid else None, "start": f"{day}T{int(hhmm.group(1)):02}:{hhmm.group(2)}:00",
+        "title": text(title.group(2)), "url": urllib.parse.urljoin(THEATRES["ndm"]["web"], title.group(1)),
+        "stage": "", "genre": NDM_GENRES.get(text(genre.group(1)) if genre else "", ""),
+        "sale": None, "cap": 0 if sold_out else None,
+        "note": "zrušeno" if cancelled else "vyprodáno" if sold_out else None if cid else "prodej zatím nezačal",
+    }
+
+
 # --- Divadla na GoOut: program a místa z API GoOut (volají ho i weby divadel a prodejní formulář) ---
 
 GOOUT = "https://goout.net/services"
@@ -464,7 +510,10 @@ def hall_info(theatre, cid, url=None):
         total_free = cats.setdefault(price, [0, 0])
         total_free[0] += 1
         total_free[1] += "occupied" not in state
-    return url, {"cats": cats, "on_sale": "Akce není v prodeji" not in page}
+    # Scéna z hlavičky sálu – pro divadla, jejichž program ji neuvádí (NDM).
+    venue = re.search(r'class="hall-title-venue[^"]*">.*?</i>(.*?)</div>', page, re.S)
+    return url, {"cats": cats, "on_sale": "Akce není v prodeji" not in page,
+                 **({"venue": text(venue.group(1))} if venue else {})}
 
 
 def websale_hall_info(t, cid):
@@ -709,7 +758,7 @@ details .cats {{ margin-top:4px; font-size:13px; line-height:1.5 }}
 Pokud zůstane na hlášce „Na tuto akci není možné provádět rezervace“, klikni na „Vstupenky“ znovu.
 Před začátkem předprodeje jsou místa vidět, ale nejdou vybrat.
 U DJKT otevře přímo představení v prodeji Plzeňské vstupenky (u představení, jejichž předprodej ještě nezačal, odkaz web divadla zatím nemá), u DBP, Husy na provázku a HaDivadla přímo prodej na GoOut.
-„Volno“ u SD UH a HDK je počet volných míst, jak ho uvádí web divadla, u MDB a DBP součet volných míst z mapy sálu (obnovuje se při každé aktualizaci stránky), u NdB, JD a DJKT součet volných míst z mapy sálu (obnovuje se zhruba každých 6 hodin; u DJKT má přednost „Posledních N vstupenek“ z webu). Husa na provázku a HaDivadlo nemají místenky, GoOut u nich počet volných míst neuvádí.
+„Volno“ u SD UH a HDK je počet volných míst, jak ho uvádí web divadla, u MDB a DBP součet volných míst z mapy sálu (obnovuje se při každé aktualizaci stránky), u NdB, JD, DJKT a NDM součet volných míst z mapy sálu (obnovuje se zhruba každých 6 hodin; u DJKT má přednost „Posledních N vstupenek“ z webu). Husa na provázku a HaDivadlo nemají místenky, GoOut u nich počet volných míst neuvádí.
 Ceny jsou základní ceny cenových kategorií, ve kterých jsou ještě volná místa; po rozkliknutí rozpad po kategoriích.</p>
 </main>
 <script>
@@ -833,7 +882,7 @@ def main():
     events, stale = [], {}
     programs = json.loads(PROGRAMS.read_text(encoding="utf-8")) if PROGRAMS.exists() else {}
     fetchers = [("mdb", fetch_mdb), ("ndb", fetch_ndb_or_file), ("sd", fetch_sd), ("jd", fetch_jd),
-                ("hdk", fetch_hdk), ("djkt", fetch_djkt)]
+                ("hdk", fetch_hdk), ("djkt", fetch_djkt), ("ndm", fetch_ndm)]
     fetchers += [(k, lambda k=k: fetch_goout(k)) for k, t in THEATRES.items() if "goout" in t]
     for theatre, fetch in fetchers:
         name = THEATRES[theatre]["short"]
@@ -888,6 +937,12 @@ def main():
                 seats[key(e)] = {"cap": e["cap"], **hall, "ts": now}
         CACHE.write_text(json.dumps(urls, indent=1), encoding="utf-8")
         SEATS.write_text(json.dumps(seats, indent=1), encoding="utf-8")
+
+    for e in events:  # scéna z mapy sálu, když ji program neuvádí: „Divadlo X (hlavní sál)“ → „Hlavní sál“
+        venue = (seats.get(key(e)) or {}).get("venue") if e["cid"] and not e["stage"] else None
+        if venue:
+            inner = re.fullmatch(re.escape(THEATRES[e["theatre"]]["name"]) + r" \((.+)\)", venue)
+            e["stage"] = inner.group(1)[:1].upper() + inner.group(1)[1:] if inner else venue
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(render(events, urls, seats, months, stale), encoding="utf-8")
