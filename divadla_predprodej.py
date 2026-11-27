@@ -1,9 +1,9 @@
 """Vygeneruje HTML přehled představení divadel s proklikem přímo na mapu sálu.
 
-Divadla: Městské divadlo Brno (API webu), Národní divadlo Brno, Slovácké divadlo Uherské Hradiště a Jihočeské divadlo
-(program z HTML webu) prodávají přes systém Colosseum, proto stejný postup pro adresu sálu
-i volná místa. Divadlo Bolka Polívky, Husa na provázku a HaDivadlo prodávají přes GoOut
-(program i mapa sálu z API GoOut).
+Divadla: Městské divadlo Brno a Hudební divadlo Karlín (API webu), Národní divadlo Brno, Slovácké divadlo
+Uherské Hradiště a Jihočeské divadlo (program z HTML webu) prodávají přes systém Colosseum, proto stejný postup
+pro adresu sálu i volná místa. Divadlo Bolka Polívky, Husa na provázku
+a HaDivadlo prodávají přes GoOut (program i mapa sálu z API GoOut).
 
 Použití:
     python divadla_predprodej.py            # všechna budoucí představení, která už jsou v programu
@@ -51,6 +51,9 @@ THEATRES = {
     "jd": {"name": "Jihočeské divadlo", "short": "JD", "web": "https://www.jihoceskedivadlo.cz",
            "server": "https://vstupenky.cbsystem.cz", "prefix": "jihoceske-divadlo",
            "form": {"mrsid": 4, "language": "cs-CZ"}},
+    "hdk": {"name": "Hudební divadlo Karlín", "short": "HDK", "web": "https://www.hdk.cz",
+            "server": "https://vstupenky.hdk.cz", "prefix": "hudebnidivadlokarlin", "cap_on_web": True,
+            "form": {"mrsid": 256, "language": "cs-CZ"}},
     # Prodávají přes GoOut místo Colossea; "goout" je ID pořadatele, "venues" jeho místa patřící divadlu.
     "dbp": {"name": "Divadlo Bolka Polívky", "short": "DBP", "web": "https://divadlobolkapolivky.cz", "goout": 164},
     "husa": {"name": "Divadlo Husa na provázku", "short": "Husa", "web": "https://www.provazek.cz", "goout": 121,
@@ -238,6 +241,28 @@ def parse_jd_block(b, genre):
         "stage": text(stage.group(1)) if stage else "", "genre": genre,
         "sale": None, "cap": 0 if sold_out else None, "note": "vyprodáno" if sold_out else None,
     }
+
+
+# --- Hudební divadlo Karlín: JSON API webu (bez hlavičky Referer odpoví 403) ---
+
+def fetch_hdk():
+    web = THEATRES["hdk"]["web"]
+    req = urllib.request.Request(f"{web}/api/performance-schedule", headers={
+        "Accept": "application/json", "User-Agent": UA, "Referer": f"{web}/program-a-vstupenky",
+        "X-Requested-With": "XMLHttpRequest"})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        raw = json.load(r)["events"]
+    events = []
+    for e in raw:
+        p = e["performance"]
+        # Web místo tlačítka Vstupenky ukazuje „Vyprodáno“, když je available 0.
+        events.append({
+            "theatre": "hdk", "cid": str(e["prdid"]), "start": e["start"].replace(" ", "T"),
+            "title": p["name"].strip(), "url": p.get("performance_url") or web,
+            "stage": e["venue"]["name"], "genre": "",
+            "sale": None, "cap": e["available"], "note": None if e["available"] else "vyprodáno",
+        })
+    return events
 
 
 # --- Divadla na GoOut: program a místa z API GoOut (volají ho i weby divadel a prodejní formulář) ---
@@ -595,7 +620,7 @@ details .cats {{ margin-top:4px; font-size:13px; line-height:1.5 }}
 Pokud zůstane na hlášce „Na tuto akci není možné provádět rezervace“, klikni na „Vstupenky“ znovu.
 Před začátkem předprodeje jsou místa vidět, ale nejdou vybrat.
 U DBP, Husy na provázku a HaDivadla otevře přímo prodej na GoOut.
-„Volno“ u SD UH je počet volných míst, jak ho uvádí web divadla, u MDB a DBP součet volných míst z mapy sálu (obnovuje se při každé aktualizaci stránky), u NdB a JD součet volných míst z mapy sálu (obnovuje se zhruba každých 6 hodin). Husa na provázku a HaDivadlo nemají místenky, GoOut u nich počet volných míst neuvádí.
+„Volno“ u SD UH a HDK je počet volných míst, jak ho uvádí web divadla, u MDB a DBP součet volných míst z mapy sálu (obnovuje se při každé aktualizaci stránky), u NdB a JD součet volných míst z mapy sálu (obnovuje se zhruba každých 6 hodin). Husa na provázku a HaDivadlo nemají místenky, GoOut u nich počet volných míst neuvádí.
 Ceny jsou základní ceny cenových kategorií, ve kterých jsou ještě volná místa; po rozkliknutí rozpad po kategoriích.</p>
 </main>
 <script>
@@ -718,7 +743,8 @@ def fetch_ndb_or_file():
 def main():
     events, stale = [], {}
     programs = json.loads(PROGRAMS.read_text(encoding="utf-8")) if PROGRAMS.exists() else {}
-    fetchers = [("mdb", fetch_mdb), ("ndb", fetch_ndb_or_file), ("sd", fetch_sd), ("jd", fetch_jd)]
+    fetchers = [("mdb", fetch_mdb), ("ndb", fetch_ndb_or_file), ("sd", fetch_sd), ("jd", fetch_jd),
+                ("hdk", fetch_hdk)]
     fetchers += [(k, lambda k=k: fetch_goout(k)) for k, t in THEATRES.items() if "goout" in t]
     for theatre, fetch in fetchers:
         name = THEATRES[theatre]["short"]
