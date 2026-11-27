@@ -1,8 +1,8 @@
 # Divadla – sály a volná místa
 
 Neoficiální rozcestník: seznam představení Městského divadla Brno, Národního divadla Brno,
-Slováckého divadla Uherské Hradiště, Jihočeského divadla, Hudebního divadla Karlín, Divadla J. K. Tyla Plzeň
-a Národního divadla moravskoslezského s počtem volných míst, cenami a tlačítkem, které otevře mapu sálu v prodejním systému Colosseum –
+Slováckého divadla Uherské Hradiště, Jihočeského divadla, Hudebního divadla Karlín, Divadla J. K. Tyla Plzeň,
+Národního divadla moravskoslezského a Divadla Hybernia s počtem volných míst, cenami a tlačítkem, které otevře mapu sálu v prodejním systému Colosseum –
 i u představení, jejichž předprodej ještě nezačal (kromě DJKT). Divadlo Bolka Polívky, Divadlo Husa na provázku
 a HaDivadlo prodávají přes GoOut, tlačítko tam otevře jeho prodejní formulář. Nákup probíhá výhradně na webech divadel a GoOut.
 
@@ -33,7 +33,10 @@ a HaDivadlo prodávají přes GoOut, tlačítko tam otevře jeho prodejní formu
   `https://www.ndm.cz/cz/program/aktualni-mesic/` (program je v ní dvakrát, bere se podle `eventid`). Každé
   představení má dva formuláře – `mrsid=114` jsou vstupenky, `mrsid=168` abonentní systém (Moje ABO). Vyprodaná
   představení `eventid` nemají. Prodejní systém `prodej.ndm.cz` (cesta `/ndm/standard/Hall/...`).
-- Scénu u NDM program neuvádí, bere se z hlavičky mapy sálu (`hall-title-venue`) a ukládá
+- Divadlo Hybernia: celý program včetně proběhlého je na stránce `https://www.hybernia.eu/program/` (dny
+  `id="perf-day-RRRR-M-D"`, žánr ze štítků); hostující představení s prodejem jinde mají jen „Více informací“
+  a vynechávají se. Prodejní systém `booking.hybernia.eu` (`mrsid=294`, cesta `/hybernia/standard/Hall/...`).
+- Scénu u NDM a Hybernie program neuvádí, bere se z hlavičky mapy sálu (`hall-title-venue`) a ukládá
   do `seats.json`. Představení bez načtené mapy (vyprodaná, mimo prodej) proto scénu nemají.
 - Divadlo Bolka Polívky (GoOut, pořadatel 164): program z `https://goout.net/services/entities/v2/schedules`
   (stejné API volá web divadla), místa podle cenových kategorií z `https://goout.net/services/feeder/v3/sales`
