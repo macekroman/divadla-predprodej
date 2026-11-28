@@ -5,7 +5,8 @@ Uherské Hradiště, Jihočeské divadlo, Národní divadlo moravskoslezské, Di
 (program z HTML webu) prodávají přes systém Colosseum, proto stejný postup
 pro adresu sálu i volná místa. Divadlo J. K. Tyla Plzeň prodává přes novější verzi Colossea (Plzeňská vstupenka),
 kde má každé představení stálou adresu a mapa sálu se načítá jinak. Divadlo Bolka Polívky, Husa na provázku
-a HaDivadlo prodávají přes GoOut (program i mapa sálu z API GoOut).
+a HaDivadlo prodávají přes GoOut (program i mapa sálu z API GoOut). Moravské divadlo Olomouc prodává přes Webticket
+vložený do stránky představení na webu divadla (místa z dat Webticketu).
 
 Použití:
     python divadla_predprodej.py            # všechna budoucí představení, která už jsou v programu
@@ -63,6 +64,8 @@ THEATRES = {
             "server": "https://prodej.ndm.cz", "prefix": "ndm", "form": {"mrsid": 114, "language": "cs-CZ"}},
     "hybernia": {"name": "Divadlo Hybernia", "short": "Hybernia", "web": "https://www.hybernia.eu",
                  "server": "https://booking.hybernia.eu", "prefix": "hybernia", "form": {"mrsid": 294, "language": "cs-CZ"}},
+    # Webticket: prodej je ve stránce představení na webu divadla, místa z JSONP dat Webticketu (viz webticket_hall_info).
+    "mdo": {"name": "Moravské divadlo Olomouc", "short": "MDO", "web": "https://moravskedivadlo.cz", "webticket": True},
     "sdo": {"name": "Slezské divadlo Opava", "short": "SDO", "web": "https://www.slezskedivadlo.cz",
             "server": "https://divadlo-opava.colosseum.eu", "prefix": "divadlo%20opava", "form": {"mrsid": 1, "language": "cs-CZ"}},
     # Prodávají přes GoOut místo Colossea; "goout" je ID pořadatele, "venues" jeho místa patřící divadlu.
@@ -407,6 +410,60 @@ def parse_hybernia_card(b, ymd):
     }
 
 
+# --- Moravské divadlo Olomouc: program po stránkách z AJAXu webu, prodej přes Webticket ---
+
+MDO_GENRES = {"cinohra": "Činohra", "opera": "Opera", "balet": "Balet"}
+
+
+def fetch_mdo():
+    web = THEATRES["mdo"]["web"]
+    content = []
+    for page in range(100):  # {"content": "<article …>…", "page": 1, "remainder": 88}
+        req = urllib.request.Request(f"{web}/cs/_ajax/filtered/{page}/list",
+                                     headers={"User-Agent": UA, "X-Requested-With": "XMLHttpRequest"})
+        with urllib.request.urlopen(req, timeout=30) as r:
+            d = json.load(r)
+        content.append(d["content"])
+        if not d.get("remainder"):
+            break
+        time.sleep(1)
+    events = {}
+    for article in re.split(r'<article class="show', "".join(content))[1:]:
+        e = parse_mdo_article(article)
+        if e:
+            events[e["cid"] or (e["title"], e["start"])] = e
+    return list(events.values())
+
+
+def parse_mdo_article(b):
+    when = re.search(r'class="date"><a[^>]*>\s*\S+ (\d{1,2})\. (\d{1,2})\.(?:&nbsp;|\s)*<span class="time">(\d{1,2}):(\d\d)', b)
+    title = re.search(r'<h2 class="title[^"]*"><a[^>]*href="([^"]+)"[^>]*>(.*?)</a>', b, re.S)
+    tickets = re.search(r'<div class="tickets">(.*?)</div>', b, re.S)
+    if not when or not title or not tickets:
+        return None
+    # <a href="/cs/cinohra/inscenace/chvilky/vstupenky/1510" class="tickets button">Vstupenky</a>, nebo „Vyprodáno“
+    buy = re.search(r'href="([^"]+/vstupenky/(\d+))"', tickets.group(1))
+    sold_out = "Vyprodáno" in tickets.group(1)
+    if not buy and not sold_out:
+        return None  # akce bez prodeje (jen „O představení“)
+    d, mo, hh, mm = when.groups()
+    # Program uvádí datum bez roku a sahá zhruba čtvrt roku dopředu.
+    recent = date.today() - timedelta(days=7)
+    year = recent.year + ((int(mo), int(d)) < (recent.month, recent.day))
+    place = re.search(r'class="auditorium">([^<]*)', b)
+    ensembles = re.findall(r'class="en_([a-z-]+)"', b)
+    web = THEATRES["mdo"]["web"]
+    return {
+        "theatre": "mdo", "cid": buy.group(2) if buy else None, "start": f"{year}-{int(mo):02}-{int(d):02}T{int(hh):02}:{mm}:00",
+        "title": text(title.group(2)), "url": web + title.group(1),
+        # „Sedmička, Sokolská 7, Ol.“ → „Sedmička“
+        "stage": text(place.group(1)).split(",")[0] if place else "",
+        "genre": next((MDO_GENRES[x] for x in ensembles if x in MDO_GENRES), ""),
+        "sale": None, "cap": 0 if sold_out else None, "note": "vyprodáno" if sold_out else None,
+        "tickets": web + buy.group(1) if buy else None,
+    }
+
+
 # --- Slezské divadlo Opava: zveřejněný program na jedné stránce ---
 
 SDO_GENRES = {"opera": "Opera", "cinohra": "Činohra"}
@@ -563,6 +620,8 @@ def hall_info(theatre, cid, url=None):
     t = THEATRES[theatre]
     if "websale" in t:
         return websale_hall_info(t, cid)
+    if t.get("webticket"):
+        return webticket_hall_info(url)
     server, base = t["server"], f'{t["server"]}/{t["prefix"]}/standard/Hall'
     o = opener()
     o.open(f"{server}/hall", urllib.parse.urlencode({**t["form"], "eventid": cid}).encode(), timeout=15).read()
@@ -634,6 +693,29 @@ def websale_hall_info(t, cid):
     return url, {"cats": cats, "on_sale": on_sale}
 
 
+WEBTICKET = "https://www.webticket.cz/api/1.t"
+
+
+def webticket_hall_info(url):
+    """Webticket: stránka představení na webu divadla (url) vloží prodej s ID akce – wt3Akce({id : 82692, …}).
+    Data akce (JSONP) mají v "akced" jen místa, která nejsou prodaná: st 0 volné, 2 rezervované, -1 mimo prodej.
+    Prodaná místa v datech chybí i s cenou, proto jen volná místa po cenách, bez počtu míst celkem."""
+    page = opener().open(url, timeout=15).read().decode("utf-8", "replace")
+    wid = re.search(r"wt3Akce\(\{\s*id\s*:\s*(\d+)", page)
+    if not wid:
+        return url, {"cats": {}, "on_sale": False}  # prodej na stránce zatím není
+    with opener().open(f"{WEBTICKET}/data/akce.jsonp?idAkce={wid.group(1)}&callback=cb", timeout=15) as r:
+        raw = r.read().decode("utf-8", "replace")
+    d = json.loads(raw[raw.find("(") + 1:raw.rfind(")")])
+    cats = {}
+    for seat in (d.get("akced") or {}).values():
+        if seat.get("st") == 0:
+            total_free = cats.setdefault(str(seat["ce"]), [0, 0])
+            total_free[0] += 1
+            total_free[1] += 1
+    return url, {"cats": cats, "free_only": True, "on_sale": bool(d.get("prodej_ok"))}
+
+
 def safe_hall_info(theatre, cid, url=None, attempts=4):
     for attempt in range(attempts):
         try:
@@ -679,9 +761,11 @@ def price_label(info):
         return price_range(prices) if prices else '<span class="muted">–</span>'
     free =[int(p) for p, (_, f) in cats.items() if f]
     summary = price_range(free) if free else '<span class="muted">nic volného</span>'
-    rows = "".join(f"<div>{p}&nbsp;Kč: <b>{f}</b> / {t}</div>"
+    free_only = info.get("free_only")  # Webticket: počet míst celkem neznáme
+    rows = "".join(f"<div>{p}&nbsp;Kč: <b>{f}</b>{'' if free_only else f' / {t}'}</div>"
                    for p, (t, f) in sorted(cats.items(), key=lambda c: -int(c[0])))
-    return f'<details><summary>{summary}</summary><div class="cats">{rows}<div class="muted">volná / celkem</div></div></details>'
+    legend = "volná" if free_only else "volná / celkem"
+    return f'<details><summary>{summary}</summary><div class="cats">{rows}<div class="muted">{legend}</div></div></details>'
 
 
 def free_count(e, info):
@@ -728,7 +812,7 @@ def render(events, urls, seats, months, stale=None):
             btn = f'<span class="muted">{e["note"]}</span>'
         elif not url:
             btn = '<span class="muted">odkaz zatím nenačten</span>'
-        elif t.get("goout") or t.get("websale"):  # prodejní formulář GoOut i Plzeňské vstupenky ukazuje mapu sálu rovnou
+        elif t.get("goout") or t.get("websale") or t.get("webticket"):  # tyto prodeje ukazují mapu sálu rovnou
             btn = f'<a class="button" href="{html.escape(url)}" target="_blank" rel="noopener">Vstupenky</a>'
         else:
             # Je-li představení v prodeji, dovede na sál oficiální postup sám (viz openHall).
@@ -840,8 +924,8 @@ details .cats {{ margin-top:4px; font-size:13px; line-height:1.5 }}
 <p class="note">„Vstupenky“ otevře novou záložku s aktuální mapou sálu v prodejním systému divadla (nejdřív v ní na okamžik otevře představení, pak hned přejde na sál).
 Pokud zůstane na hlášce „Na tuto akci není možné provádět rezervace“, klikni na „Vstupenky“ znovu.
 Před začátkem předprodeje jsou místa vidět, ale nejdou vybrat.
-U DJKT otevře přímo představení v prodeji Plzeňské vstupenky (u představení, jejichž předprodej ještě nezačal, odkaz web divadla zatím nemá), u DBP, Husy na provázku a HaDivadla přímo prodej na GoOut.
-„Volno“ u SD UH a HDK je počet volných míst, jak ho uvádí web divadla, u MDB a DBP součet volných míst z mapy sálu (obnovuje se při každé aktualizaci stránky), u NdB, JD, DJKT, NDM, Hybernie a SDO součet volných míst z mapy sálu (obnovuje se zhruba každých 6 hodin; u DJKT má přednost „Posledních N vstupenek“ z webu). Husa na provázku a HaDivadlo nemají místenky, GoOut u nich počet volných míst neuvádí.
+U DJKT otevře přímo představení v prodeji Plzeňské vstupenky (u představení, jejichž předprodej ještě nezačal, odkaz web divadla zatím nemá), u MDO stránku představení s prodejem na webu divadla, u DBP, Husy na provázku a HaDivadla přímo prodej na GoOut.
+„Volno“ u SD UH a HDK je počet volných míst, jak ho uvádí web divadla, u MDB a DBP součet volných míst z mapy sálu (obnovuje se při každé aktualizaci stránky), u NdB, JD, DJKT, NDM, Hybernie, MDO a SDO součet volných míst z mapy sálu (obnovuje se zhruba každých 6 hodin; u DJKT má přednost „Posledních N vstupenek“ z webu). MDO neuvádí, kolik míst má cenová kategorie celkem, proto jen volná místa. Husa na provázku a HaDivadlo nemají místenky, GoOut u nich počet volných míst neuvádí.
 Ceny jsou základní ceny cenových kategorií, ve kterých jsou ještě volná místa; po rozkliknutí rozpad po kategoriích.</p>
 </main>
 <script>
@@ -966,7 +1050,7 @@ def main():
     programs = json.loads(PROGRAMS.read_text(encoding="utf-8")) if PROGRAMS.exists() else {}
     fetchers = [("mdb", fetch_mdb), ("ndb", fetch_ndb_or_file), ("sd", fetch_sd), ("jd", fetch_jd),
                 ("hdk", fetch_hdk), ("djkt", fetch_djkt), ("ndm", fetch_ndm), ("hybernia", fetch_hybernia),
-                ("sdo", fetch_sdo)]
+                ("mdo", fetch_mdo), ("sdo", fetch_sdo)]
     fetchers += [(k, lambda k=k: fetch_goout(k)) for k, t in THEATRES.items() if "goout" in t]
     for theatre, fetch in fetchers:
         name = THEATRES[theatre]["short"]
@@ -997,7 +1081,7 @@ def main():
     # Po jednom a s pauzou – při souběžných dotazech prodejní systém přestane odpovídat.
     for e in todo:
         k = key(e)
-        url, hall = safe_hall_info(e["theatre"], e["cid"], urls.get(k))
+        url, hall = safe_hall_info(e["theatre"], e["cid"], urls.get(k) or e.get("tickets"))
         if url:
             urls[k] = url
             CACHE.write_text(json.dumps(urls, indent=1), encoding="utf-8")

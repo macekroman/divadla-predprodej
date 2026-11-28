@@ -2,7 +2,7 @@
 
 Neoficiální rozcestník: seznam představení Městského divadla Brno, Národního divadla Brno,
 Slováckého divadla Uherské Hradiště, Jihočeského divadla, Hudebního divadla Karlín, Divadla J. K. Tyla Plzeň,
-Národního divadla moravskoslezského, Divadla Hybernia a Slezského divadla Opava s počtem volných míst, cenami a tlačítkem, které otevře mapu sálu v prodejním systému Colosseum –
+Národního divadla moravskoslezského, Divadla Hybernia, Moravského divadla Olomouc a Slezského divadla Opava s počtem volných míst, cenami a tlačítkem, které otevře mapu sálu v prodejním systému Colosseum –
 i u představení, jejichž předprodej ještě nezačal (kromě DJKT). Divadlo Bolka Polívky, Divadlo Husa na provázku
 a HaDivadlo prodávají přes GoOut, tlačítko tam otevře jeho prodejní formulář. Nákup probíhá výhradně na webech divadel a GoOut.
 
@@ -36,6 +36,12 @@ a HaDivadlo prodávají přes GoOut, tlačítko tam otevře jeho prodejní formu
 - Divadlo Hybernia: celý program včetně proběhlého je na stránce `https://www.hybernia.eu/program/` (dny
   `id="perf-day-RRRR-M-D"`, žánr ze štítků); hostující představení s prodejem jinde mají jen „Více informací“
   a vynechávají se. Prodejní systém `booking.hybernia.eu` (`mrsid=294`, cesta `/hybernia/standard/Hall/...`).
+- Moravské divadlo Olomouc: program se načítá po stránkách z `https://moravskedivadlo.cz/cs/_ajax/filtered/N/list`
+  (JSON s HTML v `content`, `remainder` je počet zbývajících; datum bez roku). Prodává přes Webticket, který je
+  vložený do stránky představení `…/vstupenky/<id>` – tam vede tlačítko a odtud se bere ID akce Webticketu
+  (`wt3Akce({id : …})`). Místa jsou v `https://www.webticket.cz/api/1.t/data/akce.jsonp?idAkce=…` v `akced`
+  (`st` 0 volné, 2 rezervované, -1 mimo prodej, `ce` cena); prodaná místa v datech chybí, takže u MDO jsou jen
+  volná místa po cenách, bez počtu míst celkem.
 - Slezské divadlo Opava: program na stránce `https://www.slezskedivadlo.cz/program` (zhruba dva měsíce dopředu,
   „Prodej od …“ je začátek předprodeje); prodejní systém `divadlo-opava.colosseum.eu` (`mrsid=1`, cesta
   `/divadlo%20opava/standard/Hall/...`). Před začátkem prodeje sál hlásí „Na tuto akci je možné provádět
