@@ -2,7 +2,7 @@
 
 Neoficiální rozcestník: seznam představení Městského divadla Brno, Národního divadla Brno,
 Slováckého divadla Uherské Hradiště, Jihočeského divadla, Hudebního divadla Karlín, Divadla J. K. Tyla Plzeň,
-Národního divadla moravskoslezského a Divadla Hybernia s počtem volných míst, cenami a tlačítkem, které otevře mapu sálu v prodejním systému Colosseum –
+Národního divadla moravskoslezského, Divadla Hybernia a Slezského divadla Opava s počtem volných míst, cenami a tlačítkem, které otevře mapu sálu v prodejním systému Colosseum –
 i u představení, jejichž předprodej ještě nezačal (kromě DJKT). Divadlo Bolka Polívky, Divadlo Husa na provázku
 a HaDivadlo prodávají přes GoOut, tlačítko tam otevře jeho prodejní formulář. Nákup probíhá výhradně na webech divadel a GoOut.
 
@@ -36,6 +36,10 @@ a HaDivadlo prodávají přes GoOut, tlačítko tam otevře jeho prodejní formu
 - Divadlo Hybernia: celý program včetně proběhlého je na stránce `https://www.hybernia.eu/program/` (dny
   `id="perf-day-RRRR-M-D"`, žánr ze štítků); hostující představení s prodejem jinde mají jen „Více informací“
   a vynechávají se. Prodejní systém `booking.hybernia.eu` (`mrsid=294`, cesta `/hybernia/standard/Hall/...`).
+- Slezské divadlo Opava: program na stránce `https://www.slezskedivadlo.cz/program` (zhruba dva měsíce dopředu,
+  „Prodej od …“ je začátek předprodeje); prodejní systém `divadlo-opava.colosseum.eu` (`mrsid=1`, cesta
+  `/divadlo%20opava/standard/Hall/...`). Před začátkem prodeje sál hlásí „Na tuto akci je možné provádět
+  rezervace od …“. Mapa sálu uvádí jen název divadla, scény proto SDO nemá.
 - Scénu u NDM a Hybernie program neuvádí, bere se z hlavičky mapy sálu (`hall-title-venue`) a ukládá
   do `seats.json`. Představení bez načtené mapy (vyprodaná, mimo prodej) proto scénu nemají.
 - Divadlo Bolka Polívky (GoOut, pořadatel 164): program z `https://goout.net/services/entities/v2/schedules`
